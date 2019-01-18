@@ -1,0 +1,515 @@
+{
+  "versions__delta": "1",
+  "apps__hashcode": "UP_22_",
+  "application": [
+    {
+      "name": "CORSE",
+      "instance": [
+        {
+          "instanceId": "ip-10-11-4-152.us-west-2.compute.internal:CORSE:8080",
+          "hostName": "ip-10-11-4-152.us-west-2.compute.internal",
+          "app": "CORSE",
+          "ipAddr": "10.11.4.152",
+          "status": "UP",
+          "overriddenstatus": "UNKNOWN",
+          "port": {
+            "$": 8080,
+            "@enabled": "true"
+          },
+          "securePort": {
+            "$": 443,
+            "@enabled": "false"
+          },
+          "countryId": 1,
+          "dataCenterInfo": {
+            "@class": "com.netflix.appinfo.InstanceInfo$DefaultDataCenterInfo",
+            "name": "MyOwn"
+          },
+          "leaseInfo": {
+            "renewalIntervalInSecs": 10,
+            "durationInSecs": 90,
+            "registrationTimestamp": 1548775268995,
+            "lastRenewalTimestamp": 1548799562042,
+            "evictionTimestamp": 0,
+            "serviceUpTimestamp": 1548739784844
+          },
+          "metadata": {
+            "management.port": "8080"
+          },
+          "homePageUrl": "http://ip-10-11-4-152.us-west-2.compute.internal:8080/",
+          "statusPageUrl": "http://ip-10-11-4-152.us-west-2.compute.internal:8080/info",
+          "healthCheckUrl": "http://ip-10-11-4-152.us-west-2.compute.internal:8080/health",
+          "vipAddress": "CORSE",
+          "secureVipAddress": "CORSE",
+          "isCoordinatingDiscoveryServer": "false",
+          "lastUpdatedTimestamp": "1548775268996",
+          "lastDirtyTimestamp": "1548775268317",
+          "actionType": "ADDED"
+        }
+      ]
+    },
+    {
+      "name": "FOO-PROFILE",
+      "instance": [
+        {
+          "instanceId": "ip-10-11-6-196.us-west-2.compute.internal:FOO-PROFILE:8080",
+          "hostName": "ip-10-11-6-196.us-west-2.compute.internal",
+          "app": "FOO-PROFILE",
+          "ipAddr": "10.11.6.196",
+          "status": "UP",
+          "overriddenstatus": "UNKNOWN",
+          "port": {
+            "$": 8080,
+            "@enabled": "true"
+          },
+          "securePort": {
+            "$": 443,
+            "@enabled": "false"
+          },
+          "countryId": 1,
+          "dataCenterInfo": {
+            "@class": "com.netflix.appinfo.InstanceInfo$DefaultDataCenterInfo",
+            "name": "MyOwn"
+          },
+          "leaseInfo": {
+            "renewalIntervalInSecs": 30,
+            "durationInSecs": 90,
+            "registrationTimestamp": 1548759709640,
+            "lastRenewalTimestamp": 1548799556371,
+            "evictionTimestamp": 0,
+            "serviceUpTimestamp": 1548759709640
+          },
+          "metadata": {
+            "management.port": "8080"
+          },
+          "homePageUrl": "http://ip-10-11-6-196.us-west-2.compute.internal:8080/",
+          "statusPageUrl": "http://ip-10-11-6-196.us-west-2.compute.internal:8080/info",
+          "healthCheckUrl": "http://ip-10-11-6-196.us-west-2.compute.internal:8080/health",
+          "vipAddress": "FOO-PROFILE",
+          "secureVipAddress": "FOO-PROFILE",
+          "isCoordinatingDiscoveryServer": "false",
+          "lastUpdatedTimestamp": "1548759709640",
+          "lastDirtyTimestamp": "1548759709517",
+          "actionType": "ADDED"
+        }
+      ]
+    },
+    {
+      "name": "FOOLABS",
+      "instance": [
+        {
+          "hostName": "10.11.6.18",
+          "app": "FOOLABS",
+          "ipAddr": "10.11.6.18",
+          "status": "UP",
+          "overriddenstatus": "UNKNOWN",
+          "port": {
+            "$": 8888,
+            "@enabled": "true"
+          },
+          "securePort": {
+            "$": 443,
+            "@enabled": "false"
+          },
+          "countryId": 1,
+          "dataCenterInfo": {
+            "@class": "com.netflix.appinfo.AmazonInfo",
+            "name": "Amazon",
+            "metadata": {
+              "public-hostname": "10.11.6.18",
+              "instance-id": "i-0d5c1fabffb4a1e0f",
+              "local-ipv4": "10.11.6.18",
+              "instance-type": "m3.medium",
+              "ami-id": "ami-0dcc4a9bf62c7c3c6",
+              "availability-zone": "us-west-2c"
+            }
+          },
+          "leaseInfo": {
+            "renewalIntervalInSecs": 30,
+            "durationInSecs": 90,
+            "registrationTimestamp": 1548740029591,
+            "lastRenewalTimestamp": 1548799558010,
+            "evictionTimestamp": 0,
+            "serviceUpTimestamp": 1548740010169
+          },
+          "metadata": {
+            "@class": "java.util.Collections$EmptyMap"
+          },
+          "appGroupName": "UNKNOWN",
+          "homePageUrl": "http://10.11.6.18:8888/",
+          "statusPageUrl": "http://10.11.6.18:8888/Status",
+          "healthCheckUrl": "http://10.11.6.18:8888/healthcheck",
+          "vipAddress": "FOOlabs",
+          "isCoordinatingDiscoveryServer": "false",
+          "lastUpdatedTimestamp": "1548740029591",
+          "lastDirtyTimestamp": "1548740010170",
+          "actionType": "ADDED"
+        }
+      ]
+    },
+    {
+      "name": "FACT-SEARCH",
+      "instance": [
+        {
+          "instanceId": "i-0885cdc2f8a2005b3",
+          "hostName": "ip-10-11-6-37.us-west-2.compute.internal",
+          "app": "FACT-SEARCH",
+          "ipAddr": "10.11.6.37",
+          "status": "UP",
+          "overriddenstatus": "UP",
+          "port": {
+            "$": 32768,
+            "@enabled": "true"
+          },
+          "securePort": {
+            "$": 32768,
+            "@enabled": "false"
+          },
+          "countryId": 1,
+          "dataCenterInfo": {
+            "@class": "com.netflix.appinfo.InstanceInfo$DefaultDataCenterInfo",
+            "name": "MyOwn"
+          },
+          "leaseInfo": {
+            "renewalIntervalInSecs": 30,
+            "durationInSecs": 90,
+            "registrationTimestamp": 1548799462219,
+            "lastRenewalTimestamp": 1548799552237,
+            "evictionTimestamp": 0,
+            "serviceUpTimestamp": 1548739624360
+          },
+          "metadata": {
+            "@class": "java.util.Collections$EmptyMap"
+          },
+          "homePageUrl": "http://ip-10-11-6-37.us-west-2.compute.internal:32768/",
+          "statusPageUrl": "http://ip-10-11-6-37.us-west-2.compute.internal:32768/info",
+          "healthCheckUrl": "http://ip-10-11-6-37.us-west-2.compute.internal:32768/status",
+          "vipAddress": "FACT-SEARCH",
+          "secureVipAddress": "FACT-SEARCH",
+          "isCoordinatingDiscoveryServer": "false",
+          "lastUpdatedTimestamp": "1548799462225",
+          "lastDirtyTimestamp": "1548799462225",
+          "actionType": "MODIFIED"
+        }
+      ]
+    },
+    {
+      "name": "YABADABADOO",
+      "instance": [
+        {
+          "instanceId": "ip-10-11-5-39.us-west-2.compute.internal:YABADABADOO:8080",
+          "hostName": "ip-10-11-5-39.us-west-2.compute.internal",
+          "app": "YABADABADOO",
+          "ipAddr": "10.11.5.39",
+          "status": "UP",
+          "overriddenstatus": "UNKNOWN",
+          "port": {
+            "$": 8080,
+            "@enabled": "true"
+          },
+          "securePort": {
+            "$": 443,
+            "@enabled": "false"
+          },
+          "countryId": 1,
+          "dataCenterInfo": {
+            "@class": "com.netflix.appinfo.InstanceInfo$DefaultDataCenterInfo",
+            "name": "MyOwn"
+          },
+          "leaseInfo": {
+            "renewalIntervalInSecs": 30,
+            "durationInSecs": 90,
+            "registrationTimestamp": 1548772214975,
+            "lastRenewalTimestamp": 1548799548217,
+            "evictionTimestamp": 0,
+            "serviceUpTimestamp": 1548772214975
+          },
+          "metadata": {
+            "management.port": "8080"
+          },
+          "homePageUrl": "http://ip-10-11-5-39.us-west-2.compute.internal:8080/",
+          "statusPageUrl": "http://ip-10-11-5-39.us-west-2.compute.internal:8080/info",
+          "healthCheckUrl": "http://ip-10-11-5-39.us-west-2.compute.internal:8080/health",
+          "vipAddress": "YABADABADOO",
+          "secureVipAddress": "YABADABADOO",
+          "isCoordinatingDiscoveryServer": "false",
+          "lastUpdatedTimestamp": "1548772214975",
+          "lastDirtyTimestamp": "1548772214170",
+          "actionType": "ADDED"
+        }
+      ]
+    },
+    {
+      "name": "TELEMARK",
+      "instance": [
+        {
+          "instanceId": "ip-10-11-4-65.us-west-2.compute.internal:TELEMARK:8080",
+          "hostName": "ip-10-11-4-65.us-west-2.compute.internal",
+          "app": "TELEMARK",
+          "ipAddr": "10.11.4.65",
+          "status": "UP",
+          "overriddenstatus": "UNKNOWN",
+          "port": {
+            "$": 8080,
+            "@enabled": "true"
+          },
+          "securePort": {
+            "$": 443,
+            "@enabled": "false"
+          },
+          "countryId": 1,
+          "dataCenterInfo": {
+            "@class": "com.netflix.appinfo.InstanceInfo$DefaultDataCenterInfo",
+            "name": "MyOwn"
+          },
+          "leaseInfo": {
+            "renewalIntervalInSecs": 10,
+            "durationInSecs": 90,
+            "registrationTimestamp": 1548780139004,
+            "lastRenewalTimestamp": 1548799558071,
+            "evictionTimestamp": 0,
+            "serviceUpTimestamp": 1548780139004
+          },
+          "metadata": {
+            "instanceId": "TELEMARK:b4ea7ffa8ca291be3fbb795f5c173927"
+          },
+          "homePageUrl": "http://ip-10-11-4-65.us-west-2.compute.internal:8080/",
+          "statusPageUrl": "http://ip-10-11-4-65.us-west-2.compute.internal:8080/info",
+          "healthCheckUrl": "http://ip-10-11-4-65.us-west-2.compute.internal:8080/health",
+          "vipAddress": "TELEMARK",
+          "secureVipAddress": "TELEMARK",
+          "isCoordinatingDiscoveryServer": "false",
+          "lastUpdatedTimestamp": "1548780139004",
+          "lastDirtyTimestamp": "1548780138728",
+          "actionType": "ADDED"
+        }
+      ]
+    },
+    {
+      "name": "QUERY-SERVICE",
+      "instance": [
+        {
+          "instanceId": "ip-10-11-5-159.us-west-2.compute.internal:QUERY-SERVICE:8080",
+          "hostName": "ip-10-11-5-159.us-west-2.compute.internal",
+          "app": "QUERY-SERVICE",
+          "ipAddr": "10.11.5.159",
+          "status": "UP",
+          "overriddenstatus": "UNKNOWN",
+          "port": {
+            "$": 8080,
+            "@enabled": "true"
+          },
+          "securePort": {
+            "$": 443,
+            "@enabled": "false"
+          },
+          "countryId": 1,
+          "dataCenterInfo": {
+            "@class": "com.netflix.appinfo.InstanceInfo$DefaultDataCenterInfo",
+            "name": "MyOwn"
+          },
+          "leaseInfo": {
+            "renewalIntervalInSecs": 30,
+            "durationInSecs": 90,
+            "registrationTimestamp": 1548772014146,
+            "lastRenewalTimestamp": 1548799557824,
+            "evictionTimestamp": 0,
+            "serviceUpTimestamp": 1548739878536
+          },
+          "metadata": {
+            "management.port": "8080"
+          },
+          "homePageUrl": "http://ip-10-11-5-159.us-west-2.compute.internal:8080/",
+          "statusPageUrl": "http://ip-10-11-5-159.us-west-2.compute.internal:8080/info",
+          "healthCheckUrl": "http://ip-10-11-5-159.us-west-2.compute.internal:8080/health",
+          "vipAddress": "QUERY-SERVICE",
+          "secureVipAddress": "QUERY-SERVICE",
+          "isCoordinatingDiscoveryServer": "false",
+          "lastUpdatedTimestamp": "1548772014146",
+          "lastDirtyTimestamp": "1548772013297",
+          "actionType": "ADDED"
+        },
+        {
+          "instanceId": "ip-10-11-6-248.us-west-2.compute.internal:QUERY-SERVICE:8080",
+          "hostName": "ip-10-11-6-248.us-west-2.compute.internal",
+          "app": "QUERY-SERVICE",
+          "ipAddr": "10.11.6.248",
+          "status": "UP",
+          "overriddenstatus": "UNKNOWN",
+          "port": {
+            "$": 8080,
+            "@enabled": "true"
+          },
+          "securePort": {
+            "$": 443,
+            "@enabled": "false"
+          },
+          "countryId": 1,
+          "dataCenterInfo": {
+            "@class": "com.netflix.appinfo.InstanceInfo$DefaultDataCenterInfo",
+            "name": "MyOwn"
+          },
+          "leaseInfo": {
+            "renewalIntervalInSecs": 30,
+            "durationInSecs": 90,
+            "registrationTimestamp": 1548772174334,
+            "lastRenewalTimestamp": 1548799537946,
+            "evictionTimestamp": 0,
+            "serviceUpTimestamp": 1548764850485
+          },
+          "metadata": {
+            "management.port": "8080"
+          },
+          "homePageUrl": "http://ip-10-11-6-248.us-west-2.compute.internal:8080/",
+          "statusPageUrl": "http://ip-10-11-6-248.us-west-2.compute.internal:8080/info",
+          "healthCheckUrl": "http://ip-10-11-6-248.us-west-2.compute.internal:8080/health",
+          "vipAddress": "QUERY-SERVICE",
+          "secureVipAddress": "QUERY-SERVICE",
+          "isCoordinatingDiscoveryServer": "false",
+          "lastUpdatedTimestamp": "1548772174334",
+          "lastDirtyTimestamp": "1548772173754",
+          "actionType": "ADDED"
+        }
+      ]
+    },
+    {
+      "name": "CAR-CHECKER",
+      "instance": [
+        {
+          "instanceId": "i-08ccee3ace6a443cc",
+          "hostName": "ip-10-11-5-74.us-west-2.compute.internal",
+          "app": "CAR-CHECKER",
+          "ipAddr": "10.11.5.74",
+          "status": "UP",
+          "overriddenstatus": "UP",
+          "port": {
+            "$": 32771,
+            "@enabled": "true"
+          },
+          "securePort": {
+            "$": 32771,
+            "@enabled": "false"
+          },
+          "countryId": 1,
+          "dataCenterInfo": {
+            "@class": "com.netflix.appinfo.InstanceInfo$DefaultDataCenterInfo",
+            "name": "MyOwn"
+          },
+          "leaseInfo": {
+            "renewalIntervalInSecs": 30,
+            "durationInSecs": 90,
+            "registrationTimestamp": 1548799452306,
+            "lastRenewalTimestamp": 1548799542344,
+            "evictionTimestamp": 0,
+            "serviceUpTimestamp": 1548781149126
+          },
+          "metadata": {
+            "@class": "java.util.Collections$EmptyMap"
+          },
+          "homePageUrl": "http://ip-10-11-5-74.us-west-2.compute.internal:32771/",
+          "statusPageUrl": "http://ip-10-11-5-74.us-west-2.compute.internal:32771/info",
+          "healthCheckUrl": "http://ip-10-11-5-74.us-west-2.compute.internal:32771/status",
+          "vipAddress": "CAR-CHECKER",
+          "secureVipAddress": "CAR-CHECKER",
+          "isCoordinatingDiscoveryServer": "false",
+          "lastUpdatedTimestamp": "1548799452312",
+          "lastDirtyTimestamp": "1548799452312",
+          "actionType": "MODIFIED"
+        }
+      ]
+    },
+    {
+      "name": "NODEJS-FOO",
+      "instance": [
+        {
+          "instanceId": "10.11.4.119:NODEJS-FOO:32769",
+          "hostName": "10.11.4.119",
+          "app": "NODEJS-FOO",
+          "ipAddr": "10.11.4.119",
+          "status": "UP",
+          "overriddenstatus": "UNKNOWN",
+          "port": {
+            "$": 32769,
+            "@enabled": "true"
+          },
+          "securePort": {
+            "$": -1,
+            "@enabled": "false"
+          },
+          "countryId": 1,
+          "dataCenterInfo": {
+            "@class": "com.netflix.appinfo.InstanceInfo$DefaultDataCenterInfo",
+            "name": "MyOwn"
+          },
+          "leaseInfo": {
+            "renewalIntervalInSecs": 30,
+            "durationInSecs": 90,
+            "registrationTimestamp": 1548739410560,
+            "lastRenewalTimestamp": 1548799537913,
+            "evictionTimestamp": 0,
+            "serviceUpTimestamp": 1548739410560
+          },
+          "metadata": {
+            "@class": "java.util.Collections$EmptyMap"
+          },
+          "homePageUrl": "https://10.11.4.119:32769/health-check",
+          "statusPageUrl": "https://10.11.4.119:32769/health-check",
+          "healthCheckUrl": "https://10.11.4.119:32769/health-check",
+          "secureHealthCheckUrl": "https://10.11.4.119:32769/health-check",
+          "vipAddress": "NODEJS-FOO",
+          "secureVipAddress": "NODEJS-FOO",
+          "isCoordinatingDiscoveryServer": "false",
+          "lastUpdatedTimestamp": "1548739410560",
+          "lastDirtyTimestamp": "1548739410560",
+          "actionType": "ADDED"
+        }
+      ]
+    },
+    {
+      "name": "REALITY-INDEX",
+      "instance": [
+        {
+          "instanceId": "i-08ccee3ace6a443cc",
+          "hostName": "ip-10-11-5-74.us-west-2.compute.internal",
+          "app": "REALITY-INDEX",
+          "ipAddr": "10.11.5.74",
+          "status": "UP",
+          "overriddenstatus": "UP",
+          "port": {
+            "$": 32768,
+            "@enabled": "true"
+          },
+          "securePort": {
+            "$": 32768,
+            "@enabled": "false"
+          },
+          "countryId": 1,
+          "dataCenterInfo": {
+            "@class": "com.netflix.appinfo.InstanceInfo$DefaultDataCenterInfo",
+            "name": "MyOwn"
+          },
+          "leaseInfo": {
+            "renewalIntervalInSecs": 30,
+            "durationInSecs": 90,
+            "registrationTimestamp": 1548799471614,
+            "lastRenewalTimestamp": 1548799561701,
+            "evictionTimestamp": 0,
+            "serviceUpTimestamp": 1548739498939
+          },
+          "metadata": {
+            "@class": "java.util.Collections$EmptyMap"
+          },
+          "homePageUrl": "http://ip-10-11-5-74.us-west-2.compute.internal:32768/",
+          "statusPageUrl": "http://ip-10-11-5-74.us-west-2.compute.internal:32768/info",
+          "healthCheckUrl": "http://ip-10-11-5-74.us-west-2.compute.internal:32768/status",
+          "vipAddress": "REALITY-INDEX",
+          "secureVipAddress": "REALITY-INDEX",
+          "isCoordinatingDiscoveryServer": "false",
+          "lastUpdatedTimestamp": "1548799471645",
+          "lastDirtyTimestamp": "1548799471645",
+          "actionType": "MODIFIED"
+        }
+      ]
+    }
+  ]
+}

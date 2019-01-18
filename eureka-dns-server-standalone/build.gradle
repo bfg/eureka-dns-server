@@ -1,0 +1,48 @@
+//
+// build.gradle
+//
+
+plugins {
+  id "application"
+  id "com.gorylenko.gradle-git-properties"  version "2.0.0"
+  id "com.github.johnrengelman.shadow"      version "4.0.4"
+}
+
+dependencies {
+  compileOnly       "org.projectlombok:lombok"
+
+  compile           "javax.inject:javax.inject:1"
+  compile           "org.slf4j:jcl-over-slf4j"
+
+  compile           "info.picocli:picocli:3.9.3"
+  compile           "ch.qos.logback:logback-classic"
+
+  compile           project(":eureka-dns-server")
+}
+
+gitProperties {
+  dateFormat          = "yyyy-MM-dd' 'HH:mm:ssZ"
+  dateFormatTimeZone  = "UTC"
+  gitPropertiesDir    = "${project.buildDir}/resources/main"
+
+  keys                = [ 'git.build.version', 'git.commit.id', 'git.commit.id.abbrev','git.commit.time' ]
+}
+
+application {
+  mainClassName = "com.github.bfg.eureka.dns.standalone.EurekaDnsServerCli"
+}
+
+// disable creation of distribution archives
+distZip.enabled = distTar.enabled = shadowDistTar.enabled = shadowDistZip.enabled = false
+
+shadowJar {
+  baseName = "eureka-dns-server"
+  classifier = null
+
+  mergeServiceFiles()
+}
+
+build.finalizedBy shadowJar
+
+// vim:shiftwidth=2 softtabstop=2 expandtab
+// EOF

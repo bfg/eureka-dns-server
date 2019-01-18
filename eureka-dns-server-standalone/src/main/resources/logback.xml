@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!-- For assistance related to logback-translator or configuration  -->
+<!-- files in general, please contact the logback user mailing list -->
+<!-- at http://www.qos.ch/mailman/listinfo/logback-user             -->
+<!--                                                                -->
+<!-- For professional support please see                            -->
+<!--    http://www.qos.ch/shop/products/professionalSupport         -->
+<!--                                                                -->
+<configuration scan="true" scanPeriod="1 seconds">
+  <!-- See:                                                                  -->
+  <!--    http://logback.qos.ch/manual/appenders.html#ConsoleAppender        -->
+  <!--    http://logback.qos.ch/manual/appenders.html#RollingFileAppender    -->
+  <!--    http://logback.qos.ch/manual/appenders.html#TimeBasedRollingPolicy -->
+  <!--                                                                       -->
+  <!-- for further instructions and detailed documentation                   -->
+
+  <appender name="console" class="ch.qos.logback.core.ConsoleAppender">
+    <target>System.out</target>
+    <encoder>
+      <pattern>[%d{yyyy/MM/dd HH:mm:ss.SSS}] %t %-5p [%c{1}]: %m%n</pattern>
+    </encoder>
+  </appender>
+
+  <root level="INFO">
+    <appender-ref ref="console"/>
+  </root>
+
+  <!-- per-test-class defined logger -->
+  <!--logger name="com.something.else" level="DEBUG" /-->
+
+  <!-- eureka client logging is quite verbose, disable it -->
+  <!--logger name="com.netflix" level="ERROR" /-->
+
+  <!--<logger name="org.apache.http" level="TRACE" />-->
+
+</configuration>
+
+<!--
+  vim:shiftwidth=2 softtabstop=2 expandtab
+-->

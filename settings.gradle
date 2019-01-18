@@ -1,0 +1,10 @@
+//
+// settings.gradle
+//
+
+rootProject.name = 'eureka-dns-server'
+
+include "eureka-dns-server"
+include "eureka-dns-server-standalone"
+
+// EOF

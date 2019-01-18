@@ -1,0 +1,31 @@
+# gradle
+build/*
+*/build/*
+.gradle
+
+# temp folders
+tmp/*
+*/tmp/*
+out/
+
+# idea
+*.iml
+.idea/*
+*/.idea/*
+
+# eclipse
+.project
+*/.project
+.settings/*
+*/.settings/*
+
+# osx crap
+.DS_Store*
+
+# swap files
+*.*swp
+
+# generated documentation
+*/src/main/docs/*/generated
+
+# EOF

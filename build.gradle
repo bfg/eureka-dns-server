@@ -1,0 +1,180 @@
+//
+// build.gradle
+//
+
+buildscript {
+  ext {
+    lombokVersion             = "1.18.4"
+    slf4jVersion              = "1.7.25"
+    logbackVersion            = "1.2.3"
+
+    groovyVersion             = "2.5.5"
+    spockVersion              = "1.2-groovy-2.5"
+
+    nettyVersion              = "4.1.33.Final"
+    springBootVersion         = "1.5.19.RELEASE"
+    springCloudVersion        = "Edgware.SR5"
+
+    jdkByteCodeVersion        = "1.8"
+  }
+}
+
+plugins {
+  id "net.researchgate.release"             version "2.8.0"
+  id "io.spring.dependency-management"      version "1.0.6.RELEASE"
+  id "com.adarshr.test-logger"              version "1.6.0"
+}
+
+allprojects {
+  apply plugin: "java"
+  apply plugin: "groovy"
+  apply plugin: "idea"
+  apply plugin: "eclipse"
+  apply plugin: "maven"
+  apply plugin: "maven-publish"
+  apply plugin: "io.spring.dependency-management"
+  apply plugin: "com.adarshr.test-logger"
+
+  repositories {
+    mavenLocal()
+    mavenCentral()
+  }
+
+  dependencyManagement {
+    imports {
+      mavenBom  "io.netty:netty-bom:${nettyVersion}"
+      mavenBom  "org.springframework.cloud:spring-cloud-dependencies:${springCloudVersion}"
+      mavenBom  "org.springframework.boot:spring-boot-dependencies:${springBootVersion}"
+      mavenBom  "org.spockframework:spock-bom:${spockVersion}"
+    }
+
+    dependencies {
+      dependency  "org.projectlombok:lombok:${lombokVersion}"
+      dependency  "org.codehaus.groovy:groovy-all:${groovyVersion}"
+
+      // logging
+      dependency  "org.slf4j:slf4j-api:${slf4jVersion}"
+      dependency  "org.slf4j:jcl-over-slf4j:${slf4jVersion}"
+
+      dependency  "ch.qos.logback:logback-classic:${logbackVersion}"
+
+      dependency  "org.springframework.boot:spring-boot-starter-test:${springBootVersion}"
+    }
+  }
+
+  // dependencies for all projects
+  dependencies {
+    annotationProcessor     "org.projectlombok:lombok"
+    compileOnly             "org.projectlombok:lombok"
+
+    // JDK11 compilation compatibility
+    compileOnly             "javax.annotation:javax.annotation-api:1.3.2"
+
+    testAnnotationProcessor "org.projectlombok:lombok"
+    testCompile             "org.slf4j:slf4j-api"
+    testCompile             "org.codehaus.groovy:groovy-all"
+    testCompile             "org.spockframework:spock-core"
+    testCompile             "ch.qos.logback:logback-classic"
+  }
+
+  plugins.withType(JavaPlugin) {
+    // java bytecode version
+    sourceCompatibility = "${jdkByteCodeVersion}"
+    targetCompatibility = "${jdkByteCodeVersion}"
+
+    // create jar only if there is something to package
+    boolean hasSources = !sourceSets.main.allSource.files.isEmpty()
+    jar {
+      onlyIf { hasSources }
+    }
+
+    // create sources jar
+    task sourcesJar(type: Jar, dependsOn: classes, overwrite: false) {
+      classifier = "sources"
+      from sourceSets.main.allSource, sourceSets.main.java, sourceSets.main.groovy
+    }
+
+    // javadoc options
+    javadoc {
+      options.encoding "UTF-8"
+      options.addStringOption("Xdoclint:none", "-quiet")
+    }
+
+    task javadocJar(type: Jar, dependsOn: [classes, javadoc], overwrite: false) {
+      classifier = "javadoc"
+      from javadoc.destinationDir
+    }
+
+    // add compileOnly dependencies to test runtime classpath as well.
+    sourceSets {
+      test.compileClasspath += configurations.compileOnly
+      test.runtimeClasspath += configurations.compileOnly
+    }
+
+    // set publish repos only if there are any sources to publish
+    if (hasSources) {
+      publishing {
+        repositories {
+          // https://discuss.gradle.org/t/maven-publish-specify-a-repo-as-being-a-snapshot-repo/374
+          // add project.version.endsWith("-SNAPSHOT") ?
+          //        project.repositories.snapshots : project.repositories.releases
+        }
+
+        publications {
+          main(MavenPublication) {
+            from components.java
+
+            if (tasks.findByName("sourcesJar")) {
+              artifact sourcesJar
+            }
+            if (tasks.findByName("javadocJar")) {
+              artifact javadocJar
+            }
+          }
+        }
+      }
+    }
+  }
+
+  tasks.withType(JavaCompile) {
+    sourceCompatibility   = targetCompatibility = "${jdkByteCodeVersion}"
+    options.incremental   = true
+    //options.verbose       = true
+    options.compilerArgs  << "-Xlint:deprecation" << "-Xlint:unchecked"
+  }
+
+  tasks.withType(GroovyCompile) {
+    sourceCompatibility   = targetCompatibility = "${jdkByteCodeVersion}"
+    options.incremental   = true
+    //options.verbose       = true
+    options.compilerArgs  << "-Xlint:deprecation" << "-Xlint:unchecked"
+  }
+
+  // required for successful spock test runtime execution
+  ext['groovy.version'] = "${groovyVersion}"
+
+  // reproducible builds
+  tasks.withType(AbstractArchiveTask) {
+    preserveFileTimestamps  = false
+    reproducibleFileOrder   = true
+  }
+
+  testlogger {
+    theme         "mocha"
+    slowThreshold 5000
+  }
+
+}
+
+test {
+  failFast = true
+}
+
+release {
+  git {
+    requireBranch = ""
+  }
+}
+
+// vim:shiftwidth=2 softtabstop=2 expandtab
+// EOF
