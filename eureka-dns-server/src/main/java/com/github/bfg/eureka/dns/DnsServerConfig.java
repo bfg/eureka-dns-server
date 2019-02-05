@@ -32,12 +32,6 @@ public final class DnsServerConfig implements Cloneable {
     private EventLoopGroup eventLoopGroup;
 
     /**
-     * Maximum number of worker threads for newly created event loop group to use if {@link #eventLoopGroup} is not
-     * specified. Set to 0 to detect number of available CPUs.
-     */
-    private int maxThreads = 0;
-
-    /**
      * Eureka client used to perform service registry lookups.
      */
     private EurekaClient eurekaClient;
@@ -51,6 +45,23 @@ public final class DnsServerConfig implements Cloneable {
      * Maximum number of host records to respond with to {@code A} and {@code AAAA} queries.
      */
     private int maxResponses = 5;
+
+    /**
+     * Maximum number of worker threads in newly created netty event loop group if event loop group is not supplied. Set
+     * to 0 to detect number of available CPUs.
+     *
+     * @see #getEventLoopGroup()
+     * @see #isPreferNativeTransport()
+     */
+    private int maxThreads = 1;
+
+    /**
+     * Prefer netty native transport if event loop group is not supplied.
+     *
+     * @see #getEventLoopGroup()
+     * @see #getMaxThreads()
+     */
+    private boolean preferNativeTransport = true;
 
     /**
      * Eureka top level domain, should <b>NOT</b> contain prefixing/suffixing dot.
@@ -71,6 +82,18 @@ public final class DnsServerConfig implements Cloneable {
      */
     public DnsServerConfig withAddress(@NonNull String addr) {
         addresses.add(addr);
+        return this;
+    }
+
+    /**
+     * Adds multiple listening addresses.
+     *
+     * @param addrs addresses
+     * @return reference to itself.
+     */
+    public DnsServerConfig setAddresses(@NonNull Collection<String> addrs) {
+        addresses.clear();
+        addresses.addAll(addrs);
         return this;
     }
 
@@ -102,6 +125,12 @@ public final class DnsServerConfig implements Cloneable {
         if (port < 1 || port > 65535) {
             throw new IllegalStateException("Invalid listening port: " + port);
         }
+        if (maxThreads < 0) {
+            throw new IllegalStateException("Invalid number of worker threads: " + maxThreads);
+        }
+        if (ttl < 0) {
+            throw new IllegalStateException("Invalid TTL value: " + ttl);
+        }
 
         return clone();
     }
@@ -112,10 +141,11 @@ public final class DnsServerConfig implements Cloneable {
                 .setPort(getPort())
                 .withAddresses(getAddresses())
                 .setEventLoopGroup(getEventLoopGroup())
-                .setMaxThreads(getMaxThreads())
                 .setEurekaClient(getEurekaClient())
                 .setTtl(getTtl())
                 .setMaxResponses(getMaxResponses())
+                .setMaxThreads(getMaxThreads())
+                .setPreferNativeTransport(isPreferNativeTransport())
                 .setDomain(getDomain())
                 .setLogQueries(isLogQueries());
     }
@@ -127,6 +157,6 @@ public final class DnsServerConfig implements Cloneable {
      * @throws RuntimeException if the server cannot be created.
      */
     public EurekaDnsServer create() {
-        return new EurekaDnsServer(validate());
+        return new EurekaDnsServer(this);
     }
 }

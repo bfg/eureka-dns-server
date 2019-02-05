@@ -1,5 +1,6 @@
 package com.github.bfg.eureka.dns.standalone;
 
+import com.github.bfg.eureka.dns.DnsServerConfig;
 import com.github.bfg.eureka.dns.EurekaDnsServer;
 import com.netflix.appinfo.ApplicationInfoManager;
 import com.netflix.appinfo.EurekaInstanceConfig;
@@ -35,11 +36,16 @@ import static java.lang.System.exit;
 @Slf4j
 @Command(mixinStandardHelpOptions = true)
 public final class EurekaDnsServerCli implements Runnable {
+    private DnsServerConfig config = new DnsServerConfig();
+
     @Option(names = {"-c", "--config"}, description = "Path to eureka properties file.")
     private String eurekaPropertiesFile = "";
 
     @Option(names = {"-e", "--eureka-url"}, description = "Override eureka urls")
     private List<String> eurekaUrls = new ArrayList<>();
+
+    @Option(names = {"-t", "--threads"}, description = "Number of working threads, set only if native transport is available.")
+    private int threads = config.getMaxThreads();
 
     public static void main(String... args) {
         val cmdLine = new CommandLine(new EurekaDnsServerCli());
@@ -64,10 +70,15 @@ public final class EurekaDnsServerCli implements Runnable {
 
     @Override
     public void run() {
-        val eurekaClient = createEurekaClient();
-        val server = EurekaDnsServer.builder()
+        // create eureka client if needed.
+        val eurekaClient = Optional.ofNullable(config.getEurekaClient())
+                .orElseGet(() -> createEurekaClient());
+
+        val server = config
+                .setMaxThreads(threads)
                 .setEurekaClient(eurekaClient)
                 .create();
+
         server.run();
     }
 

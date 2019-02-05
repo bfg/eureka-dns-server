@@ -3,6 +3,7 @@ package com.github.bfg.eureka.dns
 import com.netflix.discovery.EurekaClient
 import groovy.util.logging.Slf4j
 import io.netty.channel.EventLoopGroup
+import io.netty.channel.epoll.EpollEventLoopGroup
 import io.netty.channel.nio.NioEventLoopGroup
 import spock.lang.Shared
 import spock.lang.Specification
@@ -14,15 +15,14 @@ import java.util.concurrent.TimeUnit
 @Slf4j
 class EurekaDnsServerSpec extends Specification {
     static def PORT = new ServerSocket(0).getLocalPort()
-    //static Resolver resolver = resolver("localhost")
 
     @Shared
-    EventLoopGroup elg = new NioEventLoopGroup(1)
+    EventLoopGroup eventLoopGroup = new NioEventLoopGroup(1)
 
     EurekaClient eurekaClient = eurekaClient()
 
     def cleanupSpec() {
-        elg.shutdownGracefully(1, 1, TimeUnit.SECONDS).get()
+        eventLoopGroup.shutdownGracefully(1, 1, TimeUnit.SECONDS).get()
     }
 
     def "should create server without event loop group and correctly maintain start/stop functionality"() {
@@ -45,7 +45,7 @@ class EurekaDnsServerSpec extends Specification {
         when: "try to start it again"
         future = server.start()
 
-        then: "method shut throw"
+        then: "method should throw"
         thrown(IllegalStateException)
         future == null
 
@@ -54,8 +54,8 @@ class EurekaDnsServerSpec extends Specification {
 
         then:
         res.is(server)
-        server.elg.isShutdown()
-        !elg.isShutdown()
+        server.eventLoopGroup.isShutdown()
+        !eventLoopGroup.isShutdown()
 
         when: "try to stop it again"
         future = server.stop()
@@ -76,8 +76,8 @@ class EurekaDnsServerSpec extends Specification {
         res.is(server)
 
 
-        !elg.isShutdown() // shared event loop should not be shut down
-        !server.elg.isShutdown()
+        !eventLoopGroup.isShutdown() // shared event loop should not be shut down
+        !server.eventLoopGroup.isShutdown()
     }
 
     @Timeout(2)
@@ -89,7 +89,7 @@ class EurekaDnsServerSpec extends Specification {
         def shutdownThread = new Thread({
             Thread.sleep(1000)
             log.info("stopping server instance: {}", server)
-            server.stop()
+            server.close()
         })
         shutdownThread.start()
 
@@ -149,6 +149,141 @@ class EurekaDnsServerSpec extends Specification {
         server.channels == null
     }
 
+    def "starting server twice should result in a error"() {
+        given:
+        def server = builder().create()
+
+        expect:
+        server.start() != null
+
+        when:
+        server.start()
+
+        then:
+        thrown(IllegalStateException)
+    }
+
+    def "stopping already stopped server should throw an exception"() {
+        given:
+        def server = builder().create()
+
+        when: "start/stop server"
+        def result = server.start()
+                           .thenCompose({ it.stop() })
+                           .get()
+
+        then:
+        result.is(server)
+
+        when: "stop it again"
+        server.stop()
+
+        then:
+        thrown(IllegalStateException)
+    }
+
+    def "stopping server with provided event loop group should not stop event loop group"() {
+        given:
+        def server = builder().create()
+
+        when: "start and stop server"
+        server.start().get().close()
+
+        then:
+        !eventLoopGroup.isShutdown()
+        !eventLoopGroup.isTerminated()
+    }
+
+    def "should create server with generic event loop group and specified number of threads"() {
+        given:
+        def threads = 7
+        def server = builder()
+                .setEventLoopGroup(null)
+                .setPreferNativeTransport(false)
+                .setMaxThreads(threads)
+                .create()
+
+        when:
+        def elg = server.eventLoopGroup
+
+        then:
+        elg instanceof NioEventLoopGroup
+        elg.executorCount() == threads
+
+        when: "start/stop server"
+        server.start().get().close()
+
+        then: "event loop group should be shut down"
+        elg.isShutdown()
+    }
+
+    def "should create server with generic event loop group and undefined of threads"() {
+        given:
+        def server = builder()
+                .setEventLoopGroup(null)
+                .setPreferNativeTransport(false)
+                .setMaxThreads(0)
+                .create()
+
+        when:
+        def elg = server.eventLoopGroup
+
+        then:
+        elg instanceof NioEventLoopGroup
+        elg.executorCount() > 1
+
+        when: "start/stop server"
+        server.start().get().close()
+
+        then: "event loop group should be shut down"
+        elg.isShutdown()
+    }
+
+    def "should create server with native event loop group and specified number of threads"() {
+        given:
+        def threads = 7
+        def server = builder()
+                .setEventLoopGroup(null)
+                .setPreferNativeTransport(true)
+                .setMaxThreads(threads)
+                .create()
+
+        when:
+        def elg = server.eventLoopGroup
+
+        then:
+        elg instanceof EpollEventLoopGroup
+        elg.executorCount() == threads
+
+        when: "start/stop server"
+        server.start().get().close()
+
+        then: "event loop group should be shut down"
+        elg.isShutdown()
+    }
+
+    def "should create server with native event loop group and undefined of threads"() {
+        given:
+        def server = builder()
+                .setEventLoopGroup(null)
+                .setPreferNativeTransport(true)
+                .setMaxThreads(0)
+                .create()
+
+        when:
+        def elg = server.eventLoopGroup
+
+        then:
+        elg instanceof EpollEventLoopGroup
+        elg.executorCount() > 1
+
+        when: "start/stop server"
+        server.start().get().close()
+
+        then: "event loop group should be shut down"
+        elg.isShutdown()
+    }
+
     EurekaClient eurekaClient() {
         def client = Mock(EurekaClient)
 
@@ -159,9 +294,9 @@ class EurekaDnsServerSpec extends Specification {
         EurekaDnsServer.builder()
                        .setPort(PORT)
                        .setEurekaClient(eurekaClient)
-                       .setEventLoopGroup(elg)
+                       .setEventLoopGroup(eventLoopGroup)
     }
-    
+
 //    static Resolver resolver(String host) {
 //        def r = new SimpleResolver(new InetSocketAddress(host, PORT))
 //        r.setTimeout(0, 50)

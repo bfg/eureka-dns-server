@@ -7,6 +7,8 @@ import spock.lang.Unroll
 
 @Unroll
 class DnsServerConfigSpec extends Specification {
+    def eurekaClient = Mock(EurekaClient)
+
     def "creator should throw in case of missing props"() {
         when:
         def config = new DnsServerConfig().validate()
@@ -40,10 +42,10 @@ class DnsServerConfigSpec extends Specification {
         ]
     }
 
-    def "normal instance should be fine"() {
+    def "normal instance should contain sensible defaults"() {
         given:
-        def eurekaClient = Mock(EurekaClient)
         def config = new DnsServerConfig().setEurekaClient(eurekaClient)
+
         expect:
         config.getPort() == 5353
         config.getEurekaClient().is(eurekaClient)
@@ -53,5 +55,53 @@ class DnsServerConfigSpec extends Specification {
         config.getTtl() == 5
         config.getMaxResponses() == 5
         config.getDomain() == "eureka"
+    }
+
+    def "validation of default instance should complain about missing eureka client"() {
+        when:
+        def config = new DnsServerConfig().validate()
+
+        then:
+        def exception = thrown(IllegalStateException)
+        exception.getMessage().contains("Eureka client")
+
+        config == null
+    }
+
+    def "cloning/validating an instance should result in equal, but not the same instance"() {
+        given:
+        def elg = Mock(EventLoopGroup)
+        def addresses = ["127.0.0.1", "::1"]
+        def domain = "registry"
+        def config = new DnsServerConfig()
+                .setPort(1010)
+                .setLogQueries(true)
+                .setAddresses(addresses)
+                .setEventLoopGroup(elg)
+                .setEurekaClient(eurekaClient)
+                .setTtl(42)
+                .setMaxResponses(2)
+                .setMaxThreads(31)
+                .setPreferNativeTransport(false)
+                .setDomain(domain)
+                .setLogQueries(true)
+
+        when: "clone config"
+        def cloned = config.clone()
+
+        then:
+        cloned == config
+        !cloned.is(config)
+
+        cloned.getEventLoopGroup().is(elg)
+        cloned.getEurekaClient().is(eurekaClient)
+        cloned.getAddresses() == addresses as Set
+
+        when: "validate config"
+        def validated = config.validate()
+
+        then:
+        validated == config
+        !validated.is(config)
     }
 }
