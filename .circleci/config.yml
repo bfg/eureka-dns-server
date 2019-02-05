@@ -1,0 +1,40 @@
+#
+# circleci config.yml
+#
+
+# Check https://circleci.com/docs/2.0/language-java/ for more details
+#
+version: 2
+jobs:
+  build:
+    docker:
+      - image: circleci/openjdk:11-jdk
+    environment:
+      GRADLE_OPTS: -Xmx384M -Dorg.gradle.jvmargs=-Xmx384M
+      TERM: dumb
+
+    steps:
+      - checkout
+
+      - restore_cache:
+          keys:
+          - v1-dependencies-{{ checksum "build.gradle" }}
+          - v1-dependencies-
+
+      # run tests!
+      - run: ./gradlew clean build
+
+      - store_test_results:
+          path: build/junit/test/
+      - store_artifacts:
+          destination: gradle-test-reports
+          path: build/html
+      - save_cache:
+          when: always
+          paths:
+            - ~/.m2
+            - ~/.gradle
+          key: v1-dependencies-{{ checksum "build.gradle" }}
+
+# vim:shiftwidth=2 softtabstop=2 expandtab
+# EOF

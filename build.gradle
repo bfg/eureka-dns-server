@@ -163,7 +163,11 @@ allprojects {
     theme         "mocha"
     slowThreshold 5000
   }
+}
 
+subprojects {
+  testResultsDirName = "$rootDir/build/junit"
+  reporting.baseDir = "$rootDir/build/html/${project.name}"
 }
 
 test {
