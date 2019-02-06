@@ -108,7 +108,16 @@ public final class FakeEurekaClient implements EurekaClient {
     public FakeEurekaClient read(@NonNull InputStream inputStream, @NonNull String name) {
         try (val is = inputStream) {
             val apps = mapper.readValue(is, Applications.class);
-            log.info("read {} applications for region {}", apps.size(), name);
+
+            val x = apps.getRegisteredApplications();
+            val sb = new StringBuilder();
+            x.stream().forEach(app -> {
+                val instances = app.getInstances();
+                sb.append(String.format("%s (%d)\n", app.getName(), instances.size()));
+                instances.forEach(i -> sb.append(String.format("  %-9s %s\n", i.getStatus(), i.getHostName())));
+            });
+            log.info("read {} application(s) for region {}\n{}", x.size(), name, sb.toString());
+
             appsMap.put(name.toLowerCase(), apps);
         }
         return this;
