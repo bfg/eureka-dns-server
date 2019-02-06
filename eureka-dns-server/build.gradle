@@ -9,6 +9,7 @@ dependencies {
 
   compile           "com.netflix.eureka:eureka-client"
   compile           "io.netty:netty-codec-dns"
+  compileOnly       "io.netty:netty-transport-native-epoll:${nettyVersion}:linux-x86_64"
 
   testCompile       "com.google.inject:guice:4.2.2"
   testCompile       "com.fasterxml.jackson.core:jackson-databind:2.6.5"

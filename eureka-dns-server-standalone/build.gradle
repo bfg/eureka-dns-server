@@ -16,6 +16,7 @@ dependencies {
 
   compile           "info.picocli:picocli:3.9.3"
   compile           "ch.qos.logback:logback-classic"
+  compile           "io.netty:netty-transport-native-epoll:${nettyVersion}:linux-x86_64"
 
   compile           project(":eureka-dns-server")
 }
