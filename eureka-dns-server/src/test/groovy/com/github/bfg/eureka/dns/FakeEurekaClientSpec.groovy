@@ -16,12 +16,11 @@ class FakeEurekaClientSpec extends Specification {
         client.getApplication("foo") == null
     }
 
-    def "should read data from file"() {
+    def "should correctly parse data from various files"() {
         when:
         def client = new FakeEurekaClient().defaults()
-        log.info("created: {}", client)
 
         then:
-        client.getApplications().size() > 10
+        client.getApplications().size() == 7
     }
 }

@@ -30,6 +30,9 @@ import java.nio.charset.StandardCharsets;
 import java.util.Collections;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.Function;
+import java.util.function.Predicate;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Stream;
@@ -91,19 +94,23 @@ final class DnsQueryHandler extends SimpleChannelInboundHandler<DatagramDnsQuery
     protected void channelRead0(@NonNull ChannelHandlerContext ctx, @NonNull DatagramDnsQuery msg) {
         log.trace("received dns query: {}", msg);
 
-        val response = respondToDnsQuery(msg);
+        val response = createResponse(msg);
+        if (config.isLogQueries()) {
+            val name = msg.recordAt(DnsSection.QUESTION).name();
+            log.info("query status={}, answers={}, name={}", response.code(), response.count(DnsSection.ANSWER), name);
+        }
         log.trace("sending DNS response: {}", response);
 
-//        val response = new DatagramDnsResponse(msg.recipient(), msg.sender(), msg.id());
-//
-//        val v4Addr = InetAddress.getByName("192.168.3.2");
-//        val v6Addr = InetAddress.getByName("2607:f8b0:400a:800::2004");
-//
-//        response.addRecord(DnsSection.ANSWER, new DefaultDnsRawRecord(q.name(), A, 1, encodeRData(A, v4Addr)));
-//        response.addRecord(DnsSection.ANSWER, new DefaultDnsRawRecord(q.name(), AAAA, 2, encodeRData(AAAA, v6Addr)));
-//        response.addRecord(DnsSection.ANSWER, new DefaultDnsRawRecord(q.name(), TXT, 3, encodeRData(TXT, "freeform foo bar: ČĆŽŠĐ čćžšđ")));
-
         ctx.writeAndFlush(response);
+    }
+
+    private DatagramDnsResponse createResponse(DatagramDnsQuery query) {
+        try {
+            return respondToDnsQuery(query);
+        } catch (Exception e) {
+            log.error("exception while constructing response: {}", e.getMessage(), e);
+            return basicResponse(query).setCode(DnsResponseCode.SERVFAIL);
+        }
     }
 
     /**
@@ -241,8 +248,45 @@ final class DnsQueryHandler extends SimpleChannelInboundHandler<DatagramDnsQuery
                                               String questionName, String serviceName, String datacenter) {
         log.debug("{} asked for TXT record {}: service={}, datacenter={}",
                 response.recipient(), questionName, serviceName, datacenter);
+
+        val counter = new RecordCounter();
+        getEurekaAppInstances(serviceName, datacenter)
+                .map(instanceInfo -> toInstanceUrlAddress(instanceInfo, InstanceInfo::getHostName))
+                .distinct()
+                .filter(counter::test)
+                .map(url -> toDnsTXTRecord(questionName, url))
+                .forEach(e -> response.addRecord(DnsSection.ANSWER, e));
+
         return response;
     }
+
+    /**
+     * Construct given instance url.
+     *
+     * @param instanceInfo instance info
+     * @return instance url address
+     */
+    private String toInstanceUrlAddress(@NonNull InstanceInfo instanceInfo,
+                                        @NonNull Function<InstanceInfo, String> hostnameFunction) {
+        val isSecure = instanceInfo.isPortEnabled(InstanceInfo.PortType.SECURE);
+        val port = (isSecure) ? instanceInfo.getSecurePort() : instanceInfo.getPort();
+        val scheme = "http" + ((isSecure) ? "s" : "") + "://";
+        val portStr = ((isSecure && port == 443) || (!isSecure && port == 80)) ? "" : ":" + port;
+        val hostname = hostnameFunction.apply(instanceInfo);
+        return scheme + hostname + portStr + "/";
+    }
+
+    /**
+     * Converts given eureka instance info to DNS TXT record that contains instance base url address.
+     *
+     * @param questionName original dns question name
+     * @param url          instance url
+     * @return DNS TXT record.
+     */
+    private DnsRecord toDnsTXTRecord(String questionName, String url) {
+        return new DefaultDnsRawRecord(questionName, TXT, config.getTtl(), encodeRDataTXT(url));
+    }
+
 
     private DatagramDnsResponse addSRVRecords(DatagramDnsResponse response,
                                               String questionName, String serviceName, String datacenter) {
@@ -431,9 +475,21 @@ final class DnsQueryHandler extends SimpleChannelInboundHandler<DatagramDnsQuery
      */
     private ByteBuf encodeRDataTXT(@NonNull String str) {
         val bytes = str.getBytes(StandardCharsets.US_ASCII);
-        val maxBytes = Math.max(255, bytes.length);
+        val maxBytes = Math.min(255, bytes.length);
         return Unpooled.buffer(maxBytes + 1)
                 .writeByte(maxBytes)
                 .writeBytes(bytes, 0, maxBytes);
+    }
+
+    /**
+     * Element counter used in streams, because java 8 streams don't have take(int) implemented.
+     */
+    private class RecordCounter implements Predicate {
+        private final AtomicInteger counter = new AtomicInteger();
+
+        @Override
+        public boolean test(Object t) {
+            return counter.incrementAndGet() <= config.getMaxResponses();
+        }
     }
 }

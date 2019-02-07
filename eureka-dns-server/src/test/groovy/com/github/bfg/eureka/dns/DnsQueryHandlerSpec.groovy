@@ -3,6 +3,7 @@ package com.github.bfg.eureka.dns
 import com.google.common.net.InetAddresses
 import com.netflix.discovery.EurekaClient
 import groovy.util.logging.Slf4j
+import io.netty.buffer.ByteBuf
 import io.netty.handler.codec.dns.DatagramDnsQuery
 import io.netty.handler.codec.dns.DatagramDnsResponse
 import io.netty.handler.codec.dns.DefaultDnsQuestion
@@ -14,6 +15,7 @@ import io.netty.handler.codec.dns.DnsSection
 import spock.lang.Specification
 import spock.lang.Unroll
 
+import java.nio.charset.StandardCharsets
 import java.util.concurrent.atomic.AtomicInteger
 
 import static io.netty.handler.codec.dns.DnsRecord.CLASS_ANY
@@ -24,18 +26,22 @@ import static io.netty.handler.codec.dns.DnsRecord.CLASS_NONE
 import static io.netty.handler.codec.dns.DnsRecordType.A
 import static io.netty.handler.codec.dns.DnsRecordType.AAAA
 import static io.netty.handler.codec.dns.DnsResponseCode.BADNAME
+import static io.netty.handler.codec.dns.DnsResponseCode.NOERROR
 import static io.netty.handler.codec.dns.DnsResponseCode.NXDOMAIN
 import static io.netty.handler.codec.dns.DnsResponseCode.REFUSED
+import static io.netty.handler.codec.dns.DnsSection.ANSWER
 
 @Slf4j
 @Unroll
 class DnsQueryHandlerSpec extends Specification {
     private static final def counter = new AtomicInteger()
+    static def eurekaClient = TestUtils.eurekaClient()
+
     def clientAddr = new InetSocketAddress(InetAddresses.forString("2a01:260:d001:e744:a1d9:a2b1:c72e:8cfc"), 32456)
     def serverAddr = new InetSocketAddress(InetAddresses.forString("2a01:260:d001:e744::53"), 5353)
 
-    def eurekaClient = newEurekaClient()
-    def handler = new DnsQueryHandler(newConfig(eurekaClient))
+    def config = newConfig(eurekaClient)
+    def handler = new DnsQueryHandler(config)
     def query = new DatagramDnsQuery(clientAddr, serverAddr, counter.incrementAndGet())
 
     def "should throw in case of null arguments"() {
@@ -146,7 +152,7 @@ class DnsQueryHandlerSpec extends Specification {
         response.count(DnsSection.ADDITIONAL) == 0
         response.recordAt(DnsSection.QUESTION) == question
 
-        response.count(DnsSection.ANSWER) == 0
+        response.count(ANSWER) == 0
 
         where:
         dnsclass << [CLASS_CHAOS, CLASS_CSNET, CLASS_ANY, CLASS_HESIOD, CLASS_NONE]
@@ -198,6 +204,46 @@ class DnsQueryHandlerSpec extends Specification {
         type << [DnsRecordType.AXFR, DnsRecordType.SPF, DnsRecordType.SOA]
     }
 
+    def "should correctly respond to TXT queries"() {
+        given:
+        def numAnswers = 4
+        def questionName = "corse.service.eureka."
+
+        def question = createDnsQuestion(questionName, DnsRecordType.TXT)
+        def query = createDnsQuery(question)
+
+        when:
+        def response = handler.respondToDnsQuery(query)
+
+        then:
+        assertResponse(response, question, NOERROR, numAnswers)
+
+        when: "extract all answers"
+        def answers = (0..(response.count(ANSWER) - 1)).collect { response.recordAt(ANSWER, it) }
+
+        then:
+        answers.size() == numAnswers
+        answers.each { assert it.name() == questionName }
+        answers.each { assert it.dnsClass() == DnsRecord.CLASS_IN }
+        answers.each { assert it.type() == DnsRecordType.TXT }
+        answers.each { assert it.timeToLive() == config.getTtl() }
+
+        when: "decode txt record payloads"
+        def urls = answers.collect {
+            ByteBuf buf = it.content()
+            buf.readByte()
+            buf.toString(StandardCharsets.UTF_8)
+        }
+        log.info("urls: {}", urls)
+
+        then:
+        urls.size() == answers.size()
+        urls[0] == 'http://host-100.us-west-2.compute.internal:8080/'
+        urls[1] == 'http://host-101.us-west-2.compute.internal/'
+        urls[2] == 'https://host-102.us-west-2.compute.internal/'
+        urls[3] == 'https://host-104.us-west-2.compute.internal:8443/'
+    }
+
     def assertResponse(DatagramDnsResponse response,
                        DnsQuestion question,
                        DnsResponseCode expectedCode = DnsResponseCode.NOERROR,
@@ -209,19 +255,14 @@ class DnsQueryHandlerSpec extends Specification {
         assert response.recordAt(DnsSection.QUESTION) == question
 
         if (expectedCode == DnsResponseCode.NOERROR) {
-            assert response.count(DnsSection.ANSWER) == numAnswers
+            assert response.count(ANSWER) == numAnswers
         }
 
         true
     }
 
     DnsServerConfig newConfig(EurekaClient client = eurekaClient) {
-        new DnsServerConfig().setEurekaClient(client)
-                             .setLogQueries(true)
-    }
-
-    EurekaClient newEurekaClient() {
-        FakeEurekaClient.defaults()
+        TestUtils.defaultConfig(client)
     }
 
     DnsQuestion createDnsQuestion(
@@ -232,7 +273,6 @@ class DnsQueryHandlerSpec extends Specification {
     }
 
     DatagramDnsQuery createDnsQuery(DnsQuestion question) {
-        def query = new DatagramDnsQuery(clientAddr, serverAddr, counter.incrementAndGet())
         query.addRecord(DnsSection.QUESTION, question)
         query
     }
