@@ -36,5 +36,8 @@ jobs:
             - ~/.gradle
           key: v1-dependencies-{{ checksum "build.gradle" }}
 
+      # upload jacoco reports to codecov
+      - run: bash <(curl -s https://codecov.io/bash)
+
 # vim:shiftwidth=2 softtabstop=2 expandtab
 # EOF
