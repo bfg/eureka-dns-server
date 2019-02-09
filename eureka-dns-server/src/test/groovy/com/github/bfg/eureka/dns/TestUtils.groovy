@@ -11,8 +11,9 @@ class TestUtils {
 
     static DnsServerConfig defaultConfig(EurekaClient client = eurekaClient) {
         new DnsServerConfig().setEurekaClient(client)
+                             .setPort(5454)
                              .setMaxResponses(4)
-                             .setPort(new ServerSocket(0).getLocalPort())
+                             .setDomain("meureka")
                              .setLogQueries(true)
     }
 }

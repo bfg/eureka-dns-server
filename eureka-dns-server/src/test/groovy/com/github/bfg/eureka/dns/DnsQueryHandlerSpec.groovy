@@ -8,10 +8,10 @@ import io.netty.handler.codec.dns.DatagramDnsQuery
 import io.netty.handler.codec.dns.DatagramDnsResponse
 import io.netty.handler.codec.dns.DefaultDnsQuestion
 import io.netty.handler.codec.dns.DnsQuestion
-import io.netty.handler.codec.dns.DnsRecord
 import io.netty.handler.codec.dns.DnsRecordType
 import io.netty.handler.codec.dns.DnsResponseCode
 import io.netty.handler.codec.dns.DnsSection
+import spock.lang.Shared
 import spock.lang.Specification
 import spock.lang.Unroll
 
@@ -22,9 +22,14 @@ import static io.netty.handler.codec.dns.DnsRecord.CLASS_ANY
 import static io.netty.handler.codec.dns.DnsRecord.CLASS_CHAOS
 import static io.netty.handler.codec.dns.DnsRecord.CLASS_CSNET
 import static io.netty.handler.codec.dns.DnsRecord.CLASS_HESIOD
+import static io.netty.handler.codec.dns.DnsRecord.CLASS_IN
 import static io.netty.handler.codec.dns.DnsRecord.CLASS_NONE
 import static io.netty.handler.codec.dns.DnsRecordType.A
 import static io.netty.handler.codec.dns.DnsRecordType.AAAA
+import static io.netty.handler.codec.dns.DnsRecordType.AXFR
+import static io.netty.handler.codec.dns.DnsRecordType.CERT
+import static io.netty.handler.codec.dns.DnsRecordType.SPF
+import static io.netty.handler.codec.dns.DnsRecordType.TXT
 import static io.netty.handler.codec.dns.DnsResponseCode.BADNAME
 import static io.netty.handler.codec.dns.DnsResponseCode.NOERROR
 import static io.netty.handler.codec.dns.DnsResponseCode.NXDOMAIN
@@ -37,10 +42,14 @@ class DnsQueryHandlerSpec extends Specification {
     private static final def counter = new AtomicInteger()
     static def eurekaClient = TestUtils.eurekaClient()
 
+    @Shared
+    def config = newConfig(eurekaClient)
+    @Shared
+    def domain = config.getDomain()
+
     def clientAddr = new InetSocketAddress(InetAddresses.forString("2a01:260:d001:e744:a1d9:a2b1:c72e:8cfc"), 32456)
     def serverAddr = new InetSocketAddress(InetAddresses.forString("2a01:260:d001:e744::53"), 5353)
 
-    def config = newConfig(eurekaClient)
     def handler = new DnsQueryHandler(config)
     def query = new DatagramDnsQuery(clientAddr, serverAddr, counter.incrementAndGet())
 
@@ -57,42 +66,42 @@ class DnsQueryHandlerSpec extends Specification {
         handler.getDatacenter(name) == expected
 
         where:
-        name                                 | expected
-        ""                                   | ""
-        "  "                                 | ""
+        name                                    | expected
+        ""                                      | ""
+        "  "                                    | ""
 
-        "foo.service.eureka"                 | ""
-        "foo.node.eureka"                    | ""
-        "foo.connect.eureka"                 | ""
-        "_http._tcp.foo.service.eureka"      | ""
-        "_http._tcp.foo.node.eureka"         | ""
-        "_http._tcp.foo.connect.eureka"      | ""
+        "foo.service.${domain}"                 | ""
+        "foo.node.${domain}"                    | ""
+        "foo.connect.${domain}"                 | ""
+        "_http._tcp.foo.service.${domain}"      | ""
+        "_http._tcp.foo.node.${domain}"         | ""
+        "_http._tcp.foo.connect.${domain}"      | ""
 
-        "foo.service.eureka."                | ""
-        "foo.node.eureka."                   | ""
-        "foo.connect.eureka."                | ""
-        "_http._tcp.foo.service.eureka."     | ""
-        "_http._tcp.foo.node.eureka."        | ""
-        "_http._tcp.foo.connect.eureka."     | ""
+        "foo.service.${domain}."                | ""
+        "foo.node.${domain}."                   | ""
+        "foo.connect.${domain}."                | ""
+        "_http._tcp.foo.service.${domain}."     | ""
+        "_http._tcp.foo.node.${domain}."        | ""
+        "_http._tcp.foo.connect.${domain}."     | ""
 
-        "foo.service.Dc1.eureka"             | "dc1"
-        "foo.node.Dc1.eureka"                | "dc1"
-        "foo.connect.Dc1.eureka"             | "dc1"
-        "_http._tcp.foo.service.Dc1.eureka"  | "dc1"
-        "_http._tcp.foo.node.Dc1.eureka"     | "dc1"
-        "_http._tcp.foo.connect.Dc1.eureka"  | "dc1"
+        "foo.service.dc1.${domain}"             | "dc1"
+        "foo.node.dc1.${domain}"                | "dc1"
+        "foo.connect.dc1.${domain}"             | "dc1"
+        "_http._tcp.foo.service.dc1.${domain}"  | "dc1"
+        "_http._tcp.foo.node.dc1.${domain}"     | "dc1"
+        "_http._tcp.foo.connect.dc1.${domain}"  | "dc1"
 
-        "foo.service.DC1.eureka."            | "dc1"
-        "foo.node.Dc1.eureka."               | "dc1"
-        "foo.connect.Dc1.eureka."            | "dc1"
-        "_http._tcp.foo.service.Dc1.eureka." | "dc1"
-        "_http._tcp.foo.node.Dc1.eureka."    | "dc1"
-        "_http._tcp.foo.connect.Dc1.eureka." | "dc1"
+        "foo.service.dc1.${domain}."            | "dc1"
+        "foo.node.dc1.${domain}."               | "dc1"
+        "foo.connect.dc1.${domain}."            | "dc1"
+        "_http._tcp.foo.service.dc1.${domain}." | "dc1"
+        "_http._tcp.foo.node.dc1.${domain}."    | "dc1"
+        "_http._tcp.foo.connect.dc1.${domain}." | "dc1"
 
-        "foo.service.DC 1.eureka."           | ""
-        "foo.service. DC1.eureka."           | ""
-        "foo.service.DC1 .eureka."           | ""
-        "foo.service. DC1 .eureka."          | ""
+        "foo.service.DC 1.${domain}."           | ""
+        "foo.service. DC1.${domain}."           | ""
+        "foo.service.DC1 .${domain}."           | ""
+        "foo.service. DC1 .${domain}."          | ""
     }
 
     def "getServiceName(#name) should return #expected"() {
@@ -100,47 +109,47 @@ class DnsQueryHandlerSpec extends Specification {
         handler.getServiceName(name) == expected
 
         where:
-        name                                 | expected
-        ""                                   | ""
-        "  "                                 | ""
+        name                                    | expected
+        ""                                      | ""
+        "  "                                    | ""
 
-        "foo.service.eureka"                 | "foo"
-        "foo.node.eureka"                    | "foo"
-        "foo.connect.eureka"                 | "foo"
-        "_http._tcp.foo.service.eureka"      | "foo"
-        "_http._tcp.foo.node.eureka"         | "foo"
-        "_http._tcp.foo.connect.eureka"      | "foo"
+        "foo.service.${domain}"                 | "foo"
+        "foo.node.${domain}"                    | "foo"
+        "foo.connect.${domain}"                 | "foo"
+        "_http._tcp.foo.service.${domain}"      | "foo"
+        "_http._tcp.foo.node.${domain}"         | "foo"
+        "_http._tcp.foo.connect.${domain}"      | "foo"
 
-        "foo.service.eureka."                | "foo"
-        "foo.node.eureka."                   | "foo"
-        "foo.connect.eureka."                | "foo"
-        "_http._tcp.foo.service.eureka."     | "foo"
-        "_http._tcp.foo.node.eureka."        | "foo"
-        "_http._tcp.foo.connect.eureka."     | "foo"
+        "foo.service.${domain}."                | "foo"
+        "foo.node.${domain}."                   | "foo"
+        "foo.connect.${domain}."                | "foo"
+        "_http._tcp.foo.service.${domain}."     | "foo"
+        "_http._tcp.foo.node.${domain}."        | "foo"
+        "_http._tcp.foo.connect.${domain}."     | "foo"
 
-        "foo.service.Dc1.eureka"             | "foo"
-        "foo.node.Dc1.eureka"                | "foo"
-        "foo.connect.Dc1.eureka"             | "foo"
-        "_http._tcp.foo.service.Dc1.eureka"  | "foo"
-        "_http._tcp.foo.node.Dc1.eureka"     | "foo"
-        "_http._tcp.foo.connect.Dc1.eureka"  | "foo"
+        "foo.service.Dc1.${domain}"             | "foo"
+        "foo.node.Dc1.${domain}"                | "foo"
+        "foo.connect.Dc1.${domain}"             | "foo"
+        "_http._tcp.foo.service.Dc1.${domain}"  | "foo"
+        "_http._tcp.foo.node.Dc1.${domain}"     | "foo"
+        "_http._tcp.foo.connect.Dc1.${domain}"  | "foo"
 
-        "foo.service.DC1.eureka."            | "foo"
-        "foo.node.Dc1.eureka."               | "foo"
-        "foo.connect.Dc1.eureka."            | "foo"
-        "_http._tcp.foo.service.Dc1.eureka." | "foo"
-        "_http._tcp.foo.node.Dc1.eureka."    | "foo"
-        "_http._tcp.foo.connect.Dc1.eureka." | "foo"
+        "foo.service.DC1.${domain}."            | "foo"
+        "foo.node.Dc1.${domain}."               | "foo"
+        "foo.connect.Dc1.${domain}."            | "foo"
+        "_http._tcp.foo.service.Dc1.${domain}." | "foo"
+        "_http._tcp.foo.node.Dc1.${domain}."    | "foo"
+        "_http._tcp.foo.connect.Dc1.${domain}." | "foo"
 
-        "foo.service.DC 1.eureka."           | ""
-        "foo.service. DC1.eureka."           | ""
-        "foo.service.DC1 .eureka."           | ""
-        "foo.service. DC1 .eureka."          | ""
+        "foo.service.DC 1.${domain}."           | ""
+        "foo.service. DC1.${domain}."           | ""
+        "foo.service.DC1 .${domain}."           | ""
+        "foo.service. DC1 .${domain}."          | ""
     }
 
     def "should respond with REFUSED to any query that is not IN-class"() {
         given:
-        def question = createDnsQuestion("foo.eureka", A, dnsclass)
+        def question = createDnsQuestion("foo.${domain}", A, dnsclass)
         def query = createDnsQuery(question)
 
         when:
@@ -170,28 +179,28 @@ class DnsQueryHandlerSpec extends Specification {
         assertResponse(response, question, expectedCode, 1)
 
         where:
-        type | name                  | expectedCode
+        type | name                     | expectedCode
         // questions that should result in no answers
         //A    | null       | BADNAME
-        A    | ""                    | REFUSED
-        A    | "  "                  | REFUSED
-        A    | "foo"                 | REFUSED
-        A    | "foo.bar."            | REFUSED
-        A    | "bar"                 | REFUSED
-        A    | "bar.service.eureka"  | NXDOMAIN
-        A    | "bar .service.eureka" | BADNAME
+        A    | ""                       | REFUSED
+        A    | "  "                     | REFUSED
+        A    | "foo"                    | REFUSED
+        A    | "foo.bar."               | REFUSED
+        A    | "bar"                    | REFUSED
+        A    | "bar.service.${domain}"  | NXDOMAIN
+        A    | "bar .service.${domain}" | BADNAME
 
         //AAAA | null       | BADNAME
-        AAAA | ""                    | REFUSED
-        AAAA | "  "                  | REFUSED
-        AAAA | "foo.service.eureka"  | NXDOMAIN
-        AAAA | "foo.bar.eureka"      | BADNAME
-        AAAA | "bar.bar.eureka."     | BADNAME
+        AAAA | ""                       | REFUSED
+        AAAA | "  "                     | REFUSED
+        AAAA | "foo.service.${domain}"  | NXDOMAIN
+        AAAA | "foo.bar.${domain}"      | BADNAME
+        AAAA | "bar.bar.${domain}."     | BADNAME
     }
 
     def "should refuse to answer for valid name with unhandled record type: #type"() {
         given:
-        def question = createDnsQuestion("foo.eureka", type)
+        def question = createDnsQuestion("foo.${domain}", type)
         def query = createDnsQuery(question)
 
         when:
@@ -201,19 +210,19 @@ class DnsQueryHandlerSpec extends Specification {
         assertResponse(response, question, REFUSED)
 
         where:
-        type << [DnsRecordType.AXFR, DnsRecordType.SPF, DnsRecordType.SOA]
+        type << [AXFR, SPF, CERT]
     }
 
     def "should correctly respond to TXT queries"() {
         given:
         def numAnswers = 4
-        def questionName = "corse.service.eureka."
+        def questionName = "corse.service." + config.getDomain() + "."
 
-        def question = createDnsQuestion(questionName, DnsRecordType.TXT)
+        def question = createDnsQuestion(questionName, TXT)
         def query = createDnsQuery(question)
 
         when:
-        def response = handler.respondToDnsQuery(query)
+        def response = handler.createResponse(query)
 
         then:
         assertResponse(response, question, NOERROR, numAnswers)
@@ -224,8 +233,8 @@ class DnsQueryHandlerSpec extends Specification {
         then:
         answers.size() == numAnswers
         answers.each { assert it.name() == questionName }
-        answers.each { assert it.dnsClass() == DnsRecord.CLASS_IN }
-        answers.each { assert it.type() == DnsRecordType.TXT }
+        answers.each { assert it.dnsClass() == CLASS_IN }
+        answers.each { assert it.type() == TXT }
         answers.each { assert it.timeToLive() == config.getTtl() }
 
         when: "decode txt record payloads"
@@ -246,7 +255,7 @@ class DnsQueryHandlerSpec extends Specification {
 
     def assertResponse(DatagramDnsResponse response,
                        DnsQuestion question,
-                       DnsResponseCode expectedCode = DnsResponseCode.NOERROR,
+                       DnsResponseCode expectedCode = NOERROR,
                        int numAnswers = 1) {
         assert response.code() == expectedCode
         assert response.recipient() == clientAddr
@@ -254,7 +263,7 @@ class DnsQueryHandlerSpec extends Specification {
 
         assert response.recordAt(DnsSection.QUESTION) == question
 
-        if (expectedCode == DnsResponseCode.NOERROR) {
+        if (expectedCode == NOERROR) {
             assert response.count(ANSWER) == numAnswers
         }
 
@@ -268,7 +277,7 @@ class DnsQueryHandlerSpec extends Specification {
     DnsQuestion createDnsQuestion(
             String name,
             DnsRecordType type = A,
-            int dnsclass = DnsRecord.CLASS_IN) {
+            int dnsclass = CLASS_IN) {
         new DefaultDnsQuestion(name, type, dnsclass)
     }
 
