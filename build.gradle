@@ -166,6 +166,29 @@ allprojects {
 }
 
 subprojects {
+  apply plugin: "jacoco"
+
+  // BEGIN: jacoco test coverage
+  task copyJacocoReports(type: Copy, dependsOn: "jacocoTestReport") {
+    from "build/reports/jacoco/html"
+    into "$rootDir/build/reports/jacoco/${project.name}"
+  }
+
+  jacoco {
+    toolVersion = "0.8.3"
+  }
+
+  jacocoTestReport {
+    reports {
+      xml.enabled true
+      csv.enabled false
+      html.destination file("${buildDir}/reports/jacoco/html")
+    }
+  }
+
+  test.finalizedBy copyJacocoReports
+  // END: jacoco
+
   testResultsDirName = "$rootDir/build/junit"
   reporting.baseDir = "$rootDir/build/html/${project.name}"
 }
