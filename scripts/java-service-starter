@@ -1,0 +1,377 @@
+#!/bin/sh
+
+#######################################################
+#                      GLOBALS                        #
+#######################################################
+
+# directory containing files with environment variables which should
+# be sourced before starting the service
+ENV_DIR=${ENV_DIR:-"/run/env_vars"}
+
+# remove env file after it has been
+ENV_REMOVE=${ENV_REMOVE:-"0"}
+
+# debug env vars before service startup
+ENV_DEBUG=${ENV_DEBUG:-"0"}
+
+# service directory (it should contain at least one executable jar)
+SERVICE_DIR=${SERVICE_DIR:-"/service"}
+
+# java options
+JAVA_CLASS=${JAVA_CLASS:-""}
+JAVA_OPTS=${JAVA_OPTS:-""}
+
+#######################################################
+#                     FUNCTIONS                       #
+#######################################################
+
+# jar file to run
+JAR_FILE=""
+
+# native buffers size for JVM -Xmx autocalculation
+_JAVA_NATIVE_BUFFERS_SIZE="60"
+
+# detected java version
+_JAVA_VERSION=""
+
+timestamp() {
+  date +"[%Y/%m/%d %H:%M:%S]"
+}
+
+die() {
+  echo "$(timestamp) FATAL:   $@"
+  exit 1
+}
+
+msg_warn() {
+  echo "$(timestamp) WARNING: $@"
+}
+
+msg_info() {
+  echo "$(timestamp) INFO:    $@"
+}
+
+export_all_env_vars() {
+  local item=""
+  for name in $(set | egrep -i '^[a-z0-9_]+=' | cut -d= -f1 | sort -u); do
+    test -z "name" -o "$name" = "_" && continue
+    export "$name"
+  done
+}
+
+running_as_docker() {
+  test -f "/.dockerenv"
+}
+
+load_env_file() {
+  local file="$1"
+  test -f "$file" -a -r "$file" || {
+    msg_warn "Cannot load env file, not a readable file: $file"
+    return 0
+  }
+
+  local ts_start=$(date +%s)
+
+  # source the file
+  . "$file"
+  local rv=$?
+
+  local ts_end=$(date +%s)
+  local duration=$((${ts_end} - ${ts_start}))
+
+  if [ "$rv" != "0" ]; then
+    die "Error sourcing env file '$file' after $duration second(s), return status: $rv"
+    return 1
+  fi
+
+  msg_info "Successfully sourced env file '$file' in $duration second(s)"
+
+  if [ "$ENV_REMOVE" = "1" ]; then
+    rm -f "$file" || msg_warn "Error removing env file: $file"
+  fi
+}
+
+load_env_files() {
+  local env_dir=""
+  for env_dir in "${SERVICE_DIR}/env" "$ENV_DIR"; do
+    test -d "$env_dir" -a -r "$env_dir" || {
+      msg_warn "Environment variables directory '$env_dir' is not a readable directory."
+      continue
+    }
+
+    # search for files
+    local file=""
+    for file in $(find "${env_dir}" -type f | sort -u); do
+      load_env_file "$file"
+    done
+  done
+
+  # export all env vars
+  export_all_env_vars
+}
+
+env_debug() {
+  test "$ENV_DEBUG" = "1" || return 0
+
+  msg_info "Environment variables"
+  echo "--- snip ---"
+  env | sort -k1
+  echo "--- snip ---"
+}
+
+setup_env() {
+  load_env_files
+}
+
+check_libdir() {
+  local libdir="$1"
+  test -z "$libdir" -o ! -d "$libdir" -o ! -r "$libdir" && die "Invalid java service directory: '$libdir'"
+}
+
+find_executable_jar() {
+  local libdir="$1"
+
+  local file=""
+  local jar_file=""
+  for file in "${SERVICE_DIR}"/*.jar; do
+    test -f "$file" -a -r "$file" || continue
+    echo "$file"
+    return 0
+  done
+}
+
+classpath_get() {
+  local libdir="$1"
+
+  local cp="${libdir}"
+  local file=""
+  for file in "$libdir"/*.jar; do
+    test -f "$file" -a -r "$file" || continue
+    cp="${cp}:${file}"
+  done
+
+  echo "$cp"
+}
+
+# appends variable
+# args:
+#  $1: variable name   (required)
+#  $2: value to append (required)
+#  $3: joiner value    (optional, default ' ')
+append_var() {
+  local var_name="$1"
+  local value="$2"
+  local joiner="$3"
+  test -z "$joiner" && joiner=" "
+
+  _current=$(eval "echo \$${var_name}")
+
+  if [ -z "${_current}" ]; then
+    _current="$value"
+  else
+    _current="${_current}${joiner}${value}"
+  fi
+
+  eval "${var_name}"="\"${_current}\""
+}
+
+# prepends environment variable with specified value
+# args:
+#  $1: variable name   (required)
+#  $2: value to append (required)
+#  $3: joiner value    (optional, default ' ')
+prepend_var() {
+  local var_name="$1"
+  local value="$2"
+  local joiner="$3"
+  test -z "$joiner" && joiner=" "
+
+  _current=$(eval "echo \$${var_name}")
+
+  if [ -z "${_current}" ]; then
+    _current="$value"
+  else
+    _current="${value}${joiner}${_current}"
+  fi
+
+  eval "${var_name}"="\"${_current}\""
+}
+
+# echos java version (like 7, 8, 9, 10...)
+java_version() {
+  if [ -z "${_JAVA_VERSION}" ]; then
+    local version_str=$(java -version 2>&1 | grep ' version ' | cut -d ' ' -f3 | tr -d '"' | tail -n1)
+    if [ -z "$version_str" ]; then
+      _JAVA_VERSION="0"
+    elif echo "$version_str" | egrep -q '^1\.'; then
+      _JAVA_VERSION=$(echo "$version_str" | cut -d. -f2)
+    else
+      _JAVA_VERSION=$(echo "$version_str" | cut -d. -f1)
+    fi
+  fi
+
+  echo "${_JAVA_VERSION}"
+}
+
+# calculate java max heap value
+# echoes max heap value in megabytes
+java_calculate_xmx() {
+  # get machine memory
+  # free(1) is not available in opendjk9-slim, but perl is, wtf?!?
+  # local machine_mem_total=$(free -m | grep "Mem: " | awk '{print $2}')
+  local machine_mem_total=$(cat /proc/meminfo  | grep 'MemTotal' | awk '{print $2}')
+  machine_mem_total=$((${machine_mem_total} / 1024))
+
+  # try to get memory limit from cgroups
+  local cgroups_mem_total_s=$(cat /sys/fs/cgroup/memory/memory.stat | grep hierarchical_memory_limit | cut -d " " -f2)
+  local cgroups_mem_total=0
+  if [ ! -z "$cgroups_mem_total_s" ]; then
+    cgroups_mem_total=$((${cgroups_mem_total_s} / 1024 / 1024))
+  fi
+
+  local result=""
+
+  # use value which is lower
+  local mem_total="${machine_mem_total}"
+  if running_as_docker && [ "$cgroups_mem_total" != "0" ] && [ $cgroups_mem_total -lt ${machine_mem_total} ]; then
+    # we're running on docker container with memory restrictions
+    # this means that we need to subtract only
+    result=$((${cgroups_mem_total} - ${_JAVA_NATIVE_BUFFERS_SIZE}))
+  else
+    # we're running on native host or memory unrestricted docker container
+    # let's say that 180M is normally occupied by operating system daemons
+    result=$((${machine_mem_total} - 180 - ${_JAVA_NATIVE_BUFFERS_SIZE}))
+  fi
+
+  # heap should not be smaller than 64M
+  if [ $result -lt 64 ]; then
+    result=64
+  fi
+
+  echo "$result"
+}
+
+java_setup_xmx() {
+  # check if JAVA_OPTS contains -Xmx; if it does not, try to set it
+  if ! echo "$JAVA_OPTS" | grep -q '\-Xmx'; then
+    local mx=$(java_calculate_xmx)
+    prepend_var JAVA_OPTS "-Xmx${mx}M"
+  fi
+}
+
+append_java_tool_options() {
+  append_var "JAVA_TOOL_OPTIONS" "$1"
+}
+
+run_java_service() {
+  check_libdir "$SERVICE_DIR"
+
+  # if we're running on java9+, we need to add some flags in order to be able
+  # to start our services
+  if [ $(java_version) -ge 9 ]; then
+    append_java_tool_options "--illegal-access=warn"
+  fi
+
+  # if we're running on java11+ we can set additional java tool options
+  if [ $(java_version) -ge 11 ] && running_as_docker; then
+    append_java_tool_options "-XX:+UseContainerSupport"
+  fi
+
+  # disable inifinite DNS caching
+  append_java_tool_options "-Dnetworkaddress.cache.ttl=5 -Dnetworkaddress.cache.negative.ttl=5"
+
+  echo "ulimit limits:"
+  ulimit -a
+
+  # print env vars
+  env_debug
+
+  # set heap size if necessary
+  java_setup_xmx
+
+  msg_info "Using java version $(java_version)"
+
+  # otherwise those options won't get picked up
+  export JAVA_TOOL_OPTIONS
+
+  if [ ! -z "$JAVA_CLASS" ]; then
+    run_java_class "$@"
+  else
+    run_executable_jar "$@"
+  fi
+}
+
+run_java_class() {
+  CLASSPATH=$(classpath_get "$SERVICE_DIR")
+  export CLASSPATH
+  test "$CLASSPATH" = "$SERVICE_DIR" && die "No JAR files were discovered in directory: '${SERVICE_DIR}'"
+
+  msg_info "Starting java service CLASS: java ${JAVA_OPTS} ${JAVA_CLASS} $@"
+  exec java ${JAVA_OPTS} "${JAVA_CLASS}" "$@"
+}
+
+run_executable_jar() {
+  # find a jar
+  local jar_file=$(find_executable_jar "$SERVICE_DIR")
+  test ! -f "$jar_file" && die "No JAR files were discovered in directory: '${SERVICE_DIR}'"
+
+  msg_info "Starting java service JAR: java ${JAVA_OPTS} -jar ${jar_file} $@"
+  exec java ${JAVA_OPTS} -jar "${jar_file}" "$@"
+}
+
+printhelp() {
+  cat <<EOF
+Usage: $0 [JAVA_SERVICE_OPTIONS]
+
+This script tries to start java service. It looks for executable JAR
+file in directory identified by "SERVICE_DIR" directory.
+
+Supported environment variables:
+
+  * ENV_DIR       [default: "$ENV_DIR"]
+                  Directory to look for files that are sourced before
+                  service startup
+
+  * ENV_DEBUG     [default: "$ENV_DEBUG"]
+                  Print environment variables before starting service
+
+  * ENV_REMOVE    [default: "$ENV_REMOVE"]
+                  Remove env file immediately after sourcing them
+
+  * SERVICE_DIR   [default: "$SERVICE_DIR"]
+                  Directory where to look for JAR files
+
+  * JAVA_CLASS    [default: "$JAVA_CLASS"]
+                  Java service startup class. First discovered JAR
+                  file will be invoked as executable jar if this
+                  env variable is empty.
+
+  * JAVA_OPTS     [default: ""]
+                  Java command line options - this is a good place
+                  to define system properties and jvm-specific
+                  command line arguments
+
+NOTE: all command line arguments passed to this script are transferred
+      unmodified to java service.
+EOF
+}
+
+#######################################################
+#                       MAIN                          #
+#######################################################
+
+# support for command line arguments
+if [ $# = "1" ]; then
+  if [ "$1" = "-h" ] || [ "$1" = "--script-help" ]; then
+    printhelp
+    exit 0
+  fi
+fi
+
+# msg_info "java version: '$(java_version)'"
+
+setup_env
+run_java_service "$@"
+
+# vim:shiftwidth=2 softtabstop=2 expandtab
+# EOF

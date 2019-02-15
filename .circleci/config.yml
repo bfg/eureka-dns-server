@@ -18,11 +18,13 @@ jobs:
 
       - restore_cache:
           keys:
-          - v1-dependencies-{{ checksum "build.gradle" }}
-          - v1-dependencies-
+          - v3-dependencies-{{ checksum "build.gradle" }}
+          - v3-dependencies-
 
       # run tests!
-      - run: ./gradlew clean build
+      - run:
+          name: Build the project and run tests
+          command: ./gradlew clean build
 
       - store_test_results:
           path: build/junit/test/
@@ -34,10 +36,23 @@ jobs:
           paths:
             - ~/.m2
             - ~/.gradle
-          key: v1-dependencies-{{ checksum "build.gradle" }}
+          key: v3-dependencies-{{ checksum "build.gradle" }}
 
       # upload jacoco reports to codecov
       - run: bash <(curl -s https://codecov.io/bash)
+
+      # setup remote docker
+      - setup_remote_docker:
+
+      # login to docker hub
+      - run:
+          name: Docker hub login
+          command: docker login -u "$DOCKER_USER" -p "$DOCKER_PASS"
+
+      # build and push docker image
+      - run:
+          name: Build and push docker image
+          command: ./gradlew eureka-dns-server-standalone:{docker,dockerPush}
 
 # vim:shiftwidth=2 softtabstop=2 expandtab
 # EOF
