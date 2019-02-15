@@ -1,18 +1,13 @@
 package com.github.bfg.eureka.dns
 
 import groovy.util.logging.Slf4j
-import io.netty.buffer.Unpooled
+import org.xbill.DNS.Credibility
 import org.xbill.DNS.Lookup
-import org.xbill.DNS.Name
 import org.xbill.DNS.Record
 import org.xbill.DNS.Resolver
-import org.xbill.DNS.SRVRecord
-import org.xbill.DNS.Section
 import org.xbill.DNS.SimpleResolver
 import org.xbill.DNS.TXTRecord
-import spock.lang.AutoCleanup
 import spock.lang.Ignore
-import spock.lang.Shared
 import spock.lang.Specification
 import spock.lang.Unroll
 
@@ -27,23 +22,25 @@ import static org.xbill.DNS.Type.TXT
 
 @Slf4j
 @Unroll
-class EurekaDnsServerITSpec extends Specification {
-    @Shared
-    def config = TestUtils.defaultConfig()
-    @Shared
-    def domain = config.getDomain()
+abstract class EurekaDnsServerITSpec extends Specification {
+    Resolver resolver
 
-    @Shared
-    @AutoCleanup
-    EurekaDnsServer server = config.create().start().get()
+    DnsServerConfig getConfig() {
+        TestUtils.defaultConfig()
+    }
 
-    @Shared
-    Resolver resolver = createResolver()
+    String getDomain() {
+        getConfig().getDomain()
+    }
+
+    def setup() {
+        resolver = createResolver()
+    }
 
     Resolver createResolver(boolean edns = false) {
-        def r = new SimpleResolver("localhost")
+        def r = new SimpleResolver("127.0.0.1")
         r.setPort(config.getPort())
-        r.setTimeout(0, 500)
+        r.setTimeout(0, 100)
         r.setIgnoreTruncation(true)
         r.setTCP(false)
 
@@ -59,6 +56,7 @@ class EurekaDnsServerITSpec extends Specification {
         l.setResolver(resolver)
         l.setNdots(0)
         l.setSearchPath([].toArray(new String[0]))
+        l.setCredibility(Credibility.ANY)
         l
     }
 
@@ -226,7 +224,7 @@ class EurekaDnsServerITSpec extends Specification {
 
         then:
         //lookup.getResult() == SUCCESSFUL
-        records.size() == 4
+        records.size() == config.getMaxResponses()
 
         records.each { assert it.getTTL() == config.getTtl() }
         records.each { assert it.getName().toString().startsWith(name) }
@@ -236,33 +234,12 @@ class EurekaDnsServerITSpec extends Specification {
         where:
         name << [
                 "corse.service.${domain}",
-//                "corse.service.default.${domain}",
+                "corse.service.default.${domain}",
 
-//                "_corse._tcp.service.${domain}.",
-//                "_corse._tcp.service.default.${domain}",
-//                "_corse._tcp.service.default.${domain}.",
+                "_corse._tcp.service.${domain}.",
+                "_corse._tcp.service.default.${domain}",
+                "_corse._tcp.service.default.${domain}.",
         ]
-    }
-
-    def foo() {
-        given:
-        def name = new Name("_http._tcp.corse.service.${domain}.")
-        def target = new Name("foo.bar.baz.");
-        def srv = new SRVRecord(name, IN, 15, 2, 3, 8080, target)
-
-        log.info("{}", srv)
-        def bytes = srv.toWire(Section.ANSWER)
-        log.info("bytes: {}", bytes.length)
-
-        def buf = Unpooled.buffer()
-        buf.writeBytes(bytes)
-
-        log.info("buf: {} {}", buf, buf.readableBytes())
-
-        log.info("bytes: {}", bytes)
-
-        expect:
-        true
     }
 
     //

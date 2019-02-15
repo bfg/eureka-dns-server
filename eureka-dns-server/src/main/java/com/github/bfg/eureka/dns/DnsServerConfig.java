@@ -5,6 +5,7 @@ import io.netty.channel.EventLoopGroup;
 import lombok.Data;
 import lombok.NonNull;
 import lombok.experimental.Accessors;
+import org.springframework.boot.context.properties.ConfigurationProperties;
 
 import java.util.Collection;
 import java.util.LinkedHashSet;
@@ -15,6 +16,7 @@ import java.util.Set;
  */
 @Data
 @Accessors(chain = true)
+@ConfigurationProperties("eureka.dns.server")
 public final class DnsServerConfig implements Cloneable {
     /**
      * UDP listening port.

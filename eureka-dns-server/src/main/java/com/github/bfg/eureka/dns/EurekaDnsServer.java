@@ -372,7 +372,7 @@ public final class EurekaDnsServer implements Closeable {
      *
      * @return true/false
      */
-    private boolean isRunning() {
+    public boolean isRunning() {
         return startupFuture.isDone() &&
                 !startupFuture.isCancelled() &&
                 !startupFuture.isCompletedExceptionally() &&

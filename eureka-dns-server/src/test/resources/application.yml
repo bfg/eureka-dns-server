@@ -1,0 +1,28 @@
+#
+#
+#
+
+spring.application.name: my-super-app
+
+# default profile doesn't have eureka DNS server configuration
+
+---
+#
+# test profile contains eureka dns server config
+#
+spring.profiles: test
+
+eureka:
+  dns:
+    server:
+      port: 9553
+      addresses: 127.0.0.1
+      ttl: 9
+      max-responses: 4
+      max-threads: 7
+      prefer-native-transport: false
+      domain: my-eureka
+      log-queries: true
+
+# vim:shiftwidth=2 softtabstop=2 expandtab
+# EOF
