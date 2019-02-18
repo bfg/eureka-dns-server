@@ -21,6 +21,10 @@ jobs:
           - v3-dependencies-{{ checksum "build.gradle" }}
           - v3-dependencies-
 
+      - run:
+          name: Ensure that dig(1) is installed
+          command: sudo apt install dnsutils
+
       # run tests!
       - run:
           name: Build the project and run tests
@@ -38,8 +42,9 @@ jobs:
             - ~/.gradle
           key: v3-dependencies-{{ checksum "build.gradle" }}
 
-      # upload jacoco reports to codecov
-      - run: bash <(curl -s https://codecov.io/bash)
+      - run:
+          name: Upload test coverage reports
+          command: bash <(curl -s https://codecov.io/bash)
 
       # setup remote docker
       - setup_remote_docker:

@@ -11,14 +11,22 @@ dependencies {
   compile           "io.netty:netty-codec-dns"
   compileOnly       "io.netty:netty-transport-native-epoll:${nettyVersion}:linux-x86_64"
 
+  // spring support
+  compileOnly       "org.springframework:spring-context:"
+  compileOnly       "org.springframework.boot:spring-boot"
+  compileOnly       "org.springframework.boot:spring-boot-autoconfigure"
+
+  // tests
   testCompile       "com.google.inject:guice:4.2.2"
   testCompile       "com.fasterxml.jackson.core:jackson-databind:2.6.5"
-  testCompile       "io.netty:netty-transport-native-epoll:${nettyVersion}:linux-x86_64"
   testCompile       "org.slf4j:jcl-over-slf4j"
   testCompile       "ch.qos.logback:logback-classic"
-  testCompile       "dnsjava:dnsjava:2.1.8"
+
+  // spring test support
+  testCompile       "org.yaml:snakeyaml:1.23"
   testCompile       "org.spockframework:spock-spring"
-  testCompile       "org.springframework.boot:spring-boot-starter-test:${springBootVersion}"
+  testCompile       "org.springframework.boot:spring-boot-starter-web"
+  testCompile       "org.springframework.boot:spring-boot-starter-test"
 }
 
 // vim:shiftwidth=2 softtabstop=2 expandtab

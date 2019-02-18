@@ -77,7 +77,7 @@ public final class EurekaDnsServer implements Closeable {
      *
      * @param config server configuration.
      */
-    EurekaDnsServer(@NonNull DnsServerConfig config) {
+    public EurekaDnsServer(@NonNull DnsServerConfig config) {
         this(config, new DnsQueryHandler(config));
     }
 
@@ -372,7 +372,7 @@ public final class EurekaDnsServer implements Closeable {
      *
      * @return true/false
      */
-    private boolean isRunning() {
+    public boolean isRunning() {
         return startupFuture.isDone() &&
                 !startupFuture.isCancelled() &&
                 !startupFuture.isCompletedExceptionally() &&
