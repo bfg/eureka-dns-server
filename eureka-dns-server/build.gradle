@@ -21,7 +21,6 @@ dependencies {
   testCompile       "com.fasterxml.jackson.core:jackson-databind:2.6.5"
   testCompile       "org.slf4j:jcl-over-slf4j"
   testCompile       "ch.qos.logback:logback-classic"
-  testCompile       "dnsjava:dnsjava:2.1.8"
 
   // spring test support
   testCompile       "org.yaml:snakeyaml:1.23"

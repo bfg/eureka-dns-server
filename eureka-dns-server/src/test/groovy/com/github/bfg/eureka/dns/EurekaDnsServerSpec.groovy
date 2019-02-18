@@ -296,17 +296,4 @@ class EurekaDnsServerSpec extends Specification {
                        .setEurekaClient(eurekaClient)
                        .setEventLoopGroup(eventLoopGroup)
     }
-
-//    static Resolver resolver(String host) {
-//        def r = new SimpleResolver(new InetSocketAddress(host, PORT))
-//        r.setTimeout(0, 50)
-//        r.setIgnoreTruncation(false)
-//        r
-//    }
-//
-//    static Lookup lookup(args) {
-//        def l = new Lookup(args)
-//        l.setResolver(resolver)
-//        l
-//    }
 }

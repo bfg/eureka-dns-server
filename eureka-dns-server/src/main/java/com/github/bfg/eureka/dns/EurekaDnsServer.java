@@ -77,7 +77,7 @@ public final class EurekaDnsServer implements Closeable {
      *
      * @param config server configuration.
      */
-    EurekaDnsServer(@NonNull DnsServerConfig config) {
+    public EurekaDnsServer(@NonNull DnsServerConfig config) {
         this(config, new DnsQueryHandler(config));
     }
 

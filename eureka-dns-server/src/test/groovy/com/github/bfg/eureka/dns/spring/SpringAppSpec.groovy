@@ -30,7 +30,7 @@ class SpringAppSpec extends SpringSpec {
 
         expect:
         config.getPort() == 9553
-        config.getAddresses() == ['127.0.0.1', '::1'] as Set
+        config.getAddresses() == ['127.0.0.1'] as Set
         config.getTtl() == 9
         config.getMaxResponses() == 4
         config.getMaxThreads() == 7
