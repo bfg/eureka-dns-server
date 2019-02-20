@@ -66,42 +66,33 @@ class DnsQueryHandlerSpec extends Specification {
         handler.getDatacenter(name) == expected
 
         where:
-        name                                    | expected
-        ""                                      | ""
-        "  "                                    | ""
+        name                                | expected
+        ""                                  | ""
+        "  "                                | ""
 
-        "foo.service.${domain}"                 | ""
-        "foo.node.${domain}"                    | ""
-        "foo.connect.${domain}"                 | ""
-        "_http._tcp.foo.service.${domain}"      | ""
-        "_http._tcp.foo.node.${domain}"         | ""
-        "_http._tcp.foo.connect.${domain}"      | ""
+        "foo.service.${domain}"             | ""
+        "foo.connect.${domain}"             | ""
+        "_tcp.service.${domain}"            | ""
+        "_http._tcp.service.${domain}"      | ""
 
-        "foo.service.${domain}."                | ""
-        "foo.node.${domain}."                   | ""
-        "foo.connect.${domain}."                | ""
-        "_http._tcp.foo.service.${domain}."     | ""
-        "_http._tcp.foo.node.${domain}."        | ""
-        "_http._tcp.foo.connect.${domain}."     | ""
+        "foo.service.${domain}."            | ""
+        "foo.connect.${domain}."            | ""
+        "_http._tcp.foo.service.${domain}." | ""
+        "_http._tcp.foo.connect.${domain}." | ""
 
-        "foo.service.dc1.${domain}"             | "dc1"
-        "foo.node.dc1.${domain}"                | "dc1"
-        "foo.connect.dc1.${domain}"             | "dc1"
-        "_http._tcp.foo.service.dc1.${domain}"  | "dc1"
-        "_http._tcp.foo.node.dc1.${domain}"     | "dc1"
-        "_http._tcp.foo.connect.dc1.${domain}"  | "dc1"
+        "_foo.service.dc1.${domain}"        | "dc1"
+        "_foo._tcp.service.dc1.${domain}"   | "dc1"
+        "_foo._tcp.connect.dc1.${domain}"   | "dc1"
 
-        "foo.service.dc1.${domain}."            | "dc1"
-        "foo.node.dc1.${domain}."               | "dc1"
-        "foo.connect.dc1.${domain}."            | "dc1"
-        "_http._tcp.foo.service.dc1.${domain}." | "dc1"
-        "_http._tcp.foo.node.dc1.${domain}."    | "dc1"
-        "_http._tcp.foo.connect.dc1.${domain}." | "dc1"
+        "foo.service.dc1.${domain}."        | "dc1"
+        "foo.connect.dc1.${domain}."        | "dc1"
+        "_tcp._foo.service.dc1.${domain}."  | "dc1"
+        "_tcp._foo.connect.dc1.${domain}."  | "dc1"
 
-        "foo.service.DC 1.${domain}."           | ""
-        "foo.service. DC1.${domain}."           | ""
-        "foo.service.DC1 .${domain}."           | ""
-        "foo.service. DC1 .${domain}."          | ""
+        "foo.service.DC 1.${domain}."       | ""
+        "foo.service. DC1.${domain}."       | ""
+        "foo.service.DC1 .${domain}."       | ""
+        "foo.service. DC1 .${domain}."      | ""
     }
 
     def "getServiceName(#name) should return #expected"() {
@@ -109,42 +100,34 @@ class DnsQueryHandlerSpec extends Specification {
         handler.getServiceName(name) == expected
 
         where:
-        name                                    | expected
-        ""                                      | ""
-        "  "                                    | ""
+        name                               | expected
+        ""                                 | ""
+        "  "                               | ""
 
-        "foo.service.${domain}"                 | "foo"
-        "foo.node.${domain}"                    | "foo"
-        "foo.connect.${domain}"                 | "foo"
-        "_http._tcp.foo.service.${domain}"      | "foo"
-        "_http._tcp.foo.node.${domain}"         | "foo"
-        "_http._tcp.foo.connect.${domain}"      | "foo"
+        "foo.service.${domain}"            | "foo"
+        "foo.connect.${domain}"            | "foo"
+        "_foo.service.${domain}"           | "foo"
+        "_foo.connect.${domain}"           | "foo"
 
-        "foo.service.${domain}."                | "foo"
-        "foo.node.${domain}."                   | "foo"
-        "foo.connect.${domain}."                | "foo"
-        "_http._tcp.foo.service.${domain}."     | "foo"
-        "_http._tcp.foo.node.${domain}."        | "foo"
-        "_http._tcp.foo.connect.${domain}."     | "foo"
+        "foo.service.${domain}."           | "foo"
+        "foo.connect.${domain}."           | "foo"
+        "_foo._tcp.service.${domain}."     | "foo"
+        "_foo._tcp.connect.${domain}."     | "foo"
 
-        "foo.service.Dc1.${domain}"             | "foo"
-        "foo.node.Dc1.${domain}"                | "foo"
-        "foo.connect.Dc1.${domain}"             | "foo"
-        "_http._tcp.foo.service.Dc1.${domain}"  | "foo"
-        "_http._tcp.foo.node.Dc1.${domain}"     | "foo"
-        "_http._tcp.foo.connect.Dc1.${domain}"  | "foo"
+        "foo.service.Dc1.${domain}"        | "foo"
+        "foo.connect.Dc1.${domain}"        | "foo"
+        "_foo.service.Dc1.${domain}"       | "foo"
+        "_foo._tcp.connect.Dc1.${domain}"  | "foo"
 
-        "foo.service.DC1.${domain}."            | "foo"
-        "foo.node.Dc1.${domain}."               | "foo"
-        "foo.connect.Dc1.${domain}."            | "foo"
-        "_http._tcp.foo.service.Dc1.${domain}." | "foo"
-        "_http._tcp.foo.node.Dc1.${domain}."    | "foo"
-        "_http._tcp.foo.connect.Dc1.${domain}." | "foo"
+        "foo.service.DC1.${domain}."       | "foo"
+        "foo.connect.Dc1.${domain}."       | "foo"
+        "_foo._tcp.service.Dc1.${domain}." | "foo"
+        "_foo._tcp.connect.Dc1.${domain}." | "foo"
 
-        "foo.service.DC 1.${domain}."           | ""
-        "foo.service. DC1.${domain}."           | ""
-        "foo.service.DC1 .${domain}."           | ""
-        "foo.service. DC1 .${domain}."          | ""
+        "foo.service.DC 1.${domain}."      | ""
+        "foo.service. DC1.${domain}."      | ""
+        "foo.service.DC1 .${domain}."      | ""
+        "foo.service. DC1 .${domain}."     | ""
     }
 
     def "should respond with REFUSED to any query that is not IN-class"() {
