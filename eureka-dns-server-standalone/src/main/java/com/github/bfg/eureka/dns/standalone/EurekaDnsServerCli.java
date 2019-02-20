@@ -10,7 +10,10 @@ import com.netflix.discovery.DefaultEurekaClientConfig;
 import com.netflix.discovery.DiscoveryClient;
 import com.netflix.discovery.EurekaClient;
 import com.netflix.discovery.EurekaClientConfig;
+import lombok.AccessLevel;
+import lombok.Getter;
 import lombok.NonNull;
+import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import lombok.val;
 import picocli.CommandLine;
@@ -19,6 +22,7 @@ import picocli.CommandLine.Option;
 import picocli.CommandLine.ParameterException;
 
 import java.io.IOException;
+import java.io.PrintStream;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.ArrayList;
@@ -26,16 +30,19 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Properties;
+import java.util.concurrent.Callable;
 import java.util.stream.Collectors;
-
-import static java.lang.System.exit;
 
 /**
  * Command line starter for {@link EurekaDnsServer}.
  */
 @Slf4j
-@Command(mixinStandardHelpOptions = true)
-public final class EurekaDnsServerCli implements Runnable {
+@Command(mixinStandardHelpOptions = true, versionProvider = VersionProvider.class)
+public class EurekaDnsServerCli implements Callable<Integer> {
+    /**
+     * Default server config.
+     */
+    @Getter(AccessLevel.PROTECTED)
     private DnsServerConfig config = new DnsServerConfig();
 
     @Option(names = {"-c", "--config"}, description = "Path to eureka properties file.")
@@ -44,62 +51,119 @@ public final class EurekaDnsServerCli implements Runnable {
     @Option(names = {"-e", "--eureka-url"}, description = "Override eureka urls")
     private List<String> eurekaUrls = new ArrayList<>();
 
+    @Option(names = {"-p", "--port"}, description = "DNS server listening port")
+    private int port = config.getPort();
+
     @Option(names = {"-t", "--threads"}, description = "Number of working threads, set only if native transport is available.")
     private int threads = config.getMaxThreads();
 
+    /**
+     * Stdout stream.
+     */
+    @Getter(AccessLevel.PROTECTED)
+    private PrintStream stdout = System.out;
+
+    /**
+     * Stderr stream.
+     */
+    @Getter(AccessLevel.PROTECTED)
+    private PrintStream stderr = System.err;
+
+    /**
+     * Application entry point.
+     *
+     * @param args command line args
+     */
     public static void main(String... args) {
-        val cmdLine = new CommandLine(new EurekaDnsServerCli());
+        new EurekaDnsServerCli().run(args);
+    }
+
+    /**
+     * Runs the program.
+     *
+     * @param args command line args.
+     * @return exit status
+     */
+    @SneakyThrows
+    protected final int run(String... args) {
+        val cmdLine = new CommandLine(this);
 
         try {
             val result = cmdLine.parseArgs(args);
             if (result.isVersionHelpRequested()) {
-                cmdLine.printVersionHelp(System.out);
-                exit(0);
+                cmdLine.printVersionHelp(getStdout());
+                return exit(0);
             } else if (result.isUsageHelpRequested()) {
-                cmdLine.usage(System.out);
-                exit(0);
+                cmdLine.usage(getStdout());
+                return exit(0);
             }
 
-            result.asCommandLineList().stream()
+            return result.asCommandLineList().stream()
                     .map(CommandLine::getCommand)
-                    .forEach(e -> ((Runnable) e).run());
+                    .filter(e -> e instanceof Callable)
+                    .map(e -> (Callable<Integer>) e)
+                    .findFirst()
+                    .orElseGet(() -> () -> die("Cannot extract runtime method."))
+                    .call();
         } catch (ParameterException e) {
-            die(e.getMessage() + "\nError parsing command line. Run with --help for instructions.");
+            return die(e.getMessage() + "\nError parsing command line. Run with --help for instructions.");
         }
     }
 
     @Override
-    public void run() {
+    public Integer call() {
         // create eureka client if needed.
         val eurekaClient = Optional.ofNullable(config.getEurekaClient())
                 .orElseGet(() -> createEurekaClient());
 
         val server = config
+                .setPort(port)
                 .setMaxThreads(threads)
                 .setEurekaClient(eurekaClient)
+                .setLogQueries(true)
                 .create();
 
         server.run();
+        return 0;
     }
 
     /**
-     * Terminates JVM.
+     * Terminates JVM with error message being written to {@link #getStderr()}.
      *
      * @param reason reason for termination
+     * @return exit status of 255
      */
-    private static void die(@NonNull String reason) {
-        die(reason, null);
+    protected final int die(@NonNull String reason) {
+        return die(reason, null);
     }
 
-    private static void die(@NonNull String reason, Throwable cause) {
+    /**
+     * Terminates JVM with error message being written to {@link #getStderr()}
+     *
+     * @param reason reason for termination
+     * @param cause  exception, may be null
+     * @return exit status of 255
+     */
+    protected int die(@NonNull String reason, Throwable cause) {
         val sb = new StringBuilder(reason);
         if (cause != null) {
             val message = (cause.getMessage() == null) ? cause.toString() : cause.getMessage();
             sb.append(": " + message);
         }
 
-        System.err.println("FATAL: " + sb.toString());
-        exit(255);
+        getStderr().println("FATAL: " + sb.toString());
+        return exit(255);
+    }
+
+    /**
+     * Terminates JVM with given exit status.
+     *
+     * @param exitStatus termination status
+     * @return given {@code exitStatus}
+     */
+    protected int exit(int exitStatus) {
+        System.exit(exitStatus);
+        return exitStatus;
     }
 
     private EurekaClient createEurekaClient() {
