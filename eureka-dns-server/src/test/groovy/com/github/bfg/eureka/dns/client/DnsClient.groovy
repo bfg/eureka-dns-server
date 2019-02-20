@@ -66,12 +66,18 @@ class DnsClient {
         // wait for process to exit
         if (!process.waitFor(timeoutMillis, TimeUnit.MILLISECONDS)) {
             process.destroyForcibly()
-            throw new IllegalStateException("dig command didn't exit after $timeoutMillis msec.")
+            def response = new DnsResponse()
+            response.status = "DIG_TIMEOUT_FAILURE"
+            response.error = stdout + stderr
+            return response
         }
 
         def exitCode = process.exitValue()
         if (exitCode != 0) {
-            throw new IllegalStateException("dig command exited with status: $exitCode")
+            def response = new DnsResponse()
+            response.status = "DIG_FAILURE"
+            response.error = stdout + stderr
+            return response
         }
 
         def durNanos = System.nanoTime() - ts
