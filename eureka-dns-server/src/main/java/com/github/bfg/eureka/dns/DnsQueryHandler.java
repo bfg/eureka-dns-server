@@ -57,7 +57,7 @@ final class DnsQueryHandler extends SimpleChannelInboundHandler<DatagramDnsQuery
     private static final Set<DnsRecordType> VALID_QUESTION_TYPES = Collections.unmodifiableSet(new LinkedHashSet<>(
             Arrays.asList(A, AAAA, ANY, TXT, SRV, DS, SOA, NS)));
 
-    private static final String SERVICE_NAME_REGEX = "\\.?_?([\\w\\-]+)\\.(?:_\\w+\\.)?(?:service|node|connect)\\.";
+    private static final String SERVICE_NAME_REGEX = "^_?([\\w\\-]+)\\.(?:_\\w+\\.)?(?:service|connect)\\.";
     private static final String DATACENTER_REGEX = "([\\w\\-]+)\\.";
 
 
