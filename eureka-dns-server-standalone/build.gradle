@@ -67,7 +67,7 @@ shadowJar {
 
   mergeServiceFiles()
 }
-build.finalizedBy shadowJar
+//build.finalizedBy shadowJar
 
 // docker support
 docker {

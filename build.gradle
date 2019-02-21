@@ -25,6 +25,18 @@ plugins {
   id "com.adarshr.test-logger"              version "1.6.0"
 }
 
+ext.isReleaseVersion = !version.contains("-SNAPSHOT")
+def getProjectProp(name, defaultValue) {
+  if (project.hasProperty(name)) {
+    return project.getProperties().get(name)
+  }
+
+  // consult env vars
+  def envVarName = name.toUpperCase().replace(".", "_")
+  def envVarValue = System.getenv(envVarName)
+  return (envVarValue) ? envVarValue : defaultValue
+}
+
 allprojects {
   apply plugin: "java"
   apply plugin: "groovy"
@@ -32,6 +44,7 @@ allprojects {
   apply plugin: "eclipse"
   apply plugin: "maven"
   apply plugin: "maven-publish"
+  apply plugin: "signing"
   apply plugin: "io.spring.dependency-management"
   apply plugin: "com.adarshr.test-logger"
 
@@ -129,6 +142,69 @@ allprojects {
             }
             if (tasks.findByName("javadocJar")) {
               artifact javadocJar
+            }
+          }
+        }
+      }
+    }
+  }
+
+  artifacts {
+    archives jar
+    archives sourcesJar
+    archives javadocJar
+  }
+
+  signing {
+    required { isReleaseVersion && gradle.taskGraph.hasTask("uploadArchives") }
+    sign configurations.archives
+  }
+
+  uploadArchives {
+    repositories {
+      mavenDeployer {
+        beforeDeployment { MavenDeployment deployment -> signing.signPom(deployment) }
+
+        repository(url: "https://oss.sonatype.org/service/local/staging/deploy/maven2/") {
+          authentication(
+                  userName: getProjectProp('osshr.user', 'some-osshr-user'),
+                  password: getProjectProp('osshr.pass', 'some-osshr-pass'))
+        }
+
+        snapshotRepository(url: "https://oss.sonatype.org/content/repositories/snapshots/") {
+          authentication(
+                  userName: getProjectProp('osshr.user', 'some-osshr-user'),
+                  password: getProjectProp('osshr.pass', 'some-osshr-pass'))
+        }
+
+        pom.project {
+          name        "Eureka DNS server"
+          packaging   "jar"
+          description "DNS server interface to Eureka service registry"
+          url         "https://github.com/bfg/eureka-dns-server/"
+
+          scm {
+            connection          "scm:git:https://github.com/bfg/eureka-dns-server.git"
+            developerConnection "scm:git:https://github.com/bfg/eureka-dns-server.git"
+            url                 "https://github.com/bfg/eureka-dns-server/"
+          }
+
+          licenses {
+            license {
+              name "The Apache License, Version 2.0"
+              url "http://www.apache.org/licenses/LICENSE-2.0.txt"
+            }
+          }
+
+          developers {
+            developer {
+              id    "bfg"
+              name  "Brane F. Gračnar"
+            }
+            developer {
+              id    "github"
+              name  "Github project contributors"
+              url   "https://github.com/bfg/eureka-dns-server/graphs/contributors"
             }
           }
         }
