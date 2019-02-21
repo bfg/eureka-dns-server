@@ -44,7 +44,11 @@ jobs:
 
       - run:
           name: Upload test coverage reports
-          command: bash <(curl -s https://codecov.io/bash)
+          command: test -z "$CIRCLE_PR_USERNAME" && bash <(curl -s https://codecov.io/bash)
+
+      - run:
+          name: Upload artifacts to maven repository
+          command: test -z "$CIRCLE_PR_USERNAME" && ./gradlew eureka-dns-server:uploadArchives
 
       # setup remote docker
       - setup_remote_docker:
@@ -52,12 +56,12 @@ jobs:
       # login to docker hub
       - run:
           name: Docker hub login
-          command: docker login -u "$DOCKER_USER" -p "$DOCKER_PASS"
+          command: test -z "$CIRCLE_PR_USERNAME" && docker login -u "$DOCKER_USER" -p "$DOCKER_PASS"
 
       # build and push docker image
       - run:
           name: Build and push docker image
-          command: ./gradlew eureka-dns-server-standalone:{docker,dockerPush}
+          command: test -z "$CIRCLE_PR_USERNAME" && ./gradlew eureka-dns-server-standalone:{docker,dockerPush}
 
 # vim:shiftwidth=2 softtabstop=2 expandtab
 # EOF
