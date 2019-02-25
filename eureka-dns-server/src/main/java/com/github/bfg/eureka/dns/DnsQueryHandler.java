@@ -386,7 +386,7 @@ final class DnsQueryHandler extends SimpleChannelInboundHandler<DatagramDnsQuery
                     response.addRecord(DnsSection.ANSWER, toDnsSRVRecord(questionName, instanceInfo));
 
                     // optionally add A/AAAA record
-                    response.addRecord(DnsSection.ADDITIONAL, toDnsHostRecord(questionName, instanceInfo));
+                    response.addRecord(DnsSection.ADDITIONAL, toDnsHostRecord(instanceInfo.getHostName(), instanceInfo));
                 });
 
         return response;

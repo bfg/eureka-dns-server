@@ -205,6 +205,12 @@ abstract class DnsIntegrationSpec extends Specification {
         answers.each { assert it.port > 0 }
         answers.each { assert !it.target.isEmpty() }
 
+        additionals.each { assert it.name.matches('^host-\\d+.us-west-2.compute.internal$') }
+        additionals.each { assert it.ttl == config.getTtl() }
+        additionals.each { assert it.dnsClass == "IN" }
+        additionals.each { assert it.type == "A" || it.type == "AAAA" }
+        additionals.each { assert it.answer.startsWith('10.11.') || it.answer == '::2' }
+
         where:
         name << [
                 "corse.service.${domain}",
