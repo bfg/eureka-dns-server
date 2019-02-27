@@ -219,6 +219,24 @@ abstract class DnsIntegrationSpec extends Specification {
         ]
     }
 
+    def "should not return SRV records for instances that are registered as ip addresses for: #name"() {
+        when:
+        def (res, answers, authorities, additionals) = lookup(name, "SRV")
+
+        then:
+        res.status == "NXDOMAIN"
+
+        answers.isEmpty()
+        authorities.isEmpty()
+        additionals.isEmpty()
+
+        where:
+        name << [
+                "sicily.service.dc1.${domain}",
+                "_sicily._tcp.service.dc1.${domain}",
+        ]
+    }
+
     //
     // END:   RFC2782
     //

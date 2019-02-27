@@ -382,10 +382,16 @@ final class DnsQueryHandler extends SimpleChannelInboundHandler<DatagramDnsQuery
         getEurekaAppInstances(serviceName, datacenter)
                 .filter(counter::test)
                 .forEach(instanceInfo -> {
+                    // if instance is registered with it's IP address as hostname, we cannot construct DNS SRV
+                    // record, because it needs to be a valid DNS name.
+                    if (Objects.equals(instanceInfo.getIPAddr(), instanceInfo.getHostName())) {
+                        return;
+                    }
+
                     // add SRV record
                     response.addRecord(DnsSection.ANSWER, toDnsSRVRecord(questionName, instanceInfo));
 
-                    // optionally add A/AAAA record
+                    // add A/AAAA record
                     response.addRecord(DnsSection.ADDITIONAL, toDnsHostRecord(instanceInfo.getHostName(), instanceInfo));
                 });
 

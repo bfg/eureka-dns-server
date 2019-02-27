@@ -45,6 +45,95 @@
           "actionType": "ADDED"
         }
       ]
+    },
+
+    {
+      "name": "SICILY",
+      "instance": [
+        {
+          "instanceId": "host-153.us-west-2.compute.internal:SICILY:8080",
+          "hostName": "::3",
+          "app": "SICILY",
+          "ipAddr": "::3",
+          "status": "UP",
+          "overriddenstatus": "UNKNOWN",
+          "port": {
+            "$": 8080,
+            "@enabled": "true"
+          },
+          "securePort": {
+            "$": 443,
+            "@enabled": "false"
+          },
+          "countryId": 1,
+          "dataCenterInfo": {
+            "@class": "com.netflix.appinfo.InstanceInfo$DefaultDataCenterInfo",
+            "name": "MyOwn"
+          },
+          "leaseInfo": {
+            "renewalIntervalInSecs": 10,
+            "durationInSecs": 90,
+            "registrationTimestamp": 1548775268995,
+            "lastRenewalTimestamp": 1548799562042,
+            "evictionTimestamp": 0,
+            "serviceUpTimestamp": 1548739784844
+          },
+          "metadata": {
+            "management.port": "8080"
+          },
+          "homePageUrl": "http://host-152.us-west-2.compute.internal:8080/",
+          "statusPageUrl": "http://host-152.us-west-2.compute.internal:8080/info",
+          "healthCheckUrl": "http://host-152.us-west-2.compute.internal:8080/health",
+          "vipAddress": "SICILY",
+          "secureVipAddress": "SICILY",
+          "isCoordinatingDiscoveryServer": "false",
+          "lastUpdatedTimestamp": "1548775268996",
+          "lastDirtyTimestamp": "1548775268317",
+          "actionType": "ADDED"
+        },
+
+        {
+          "instanceId": "host-154.us-west-2.compute.internal:SICILY:8080",
+          "hostName": "192.168.1.154",
+          "app": "SICILY",
+          "ipAddr": "192.168.1.154",
+          "status": "UP",
+          "overriddenstatus": "UNKNOWN",
+          "port": {
+            "$": 8080,
+            "@enabled": "true"
+          },
+          "securePort": {
+            "$": 443,
+            "@enabled": "false"
+          },
+          "countryId": 1,
+          "dataCenterInfo": {
+            "@class": "com.netflix.appinfo.InstanceInfo$DefaultDataCenterInfo",
+            "name": "MyOwn"
+          },
+          "leaseInfo": {
+            "renewalIntervalInSecs": 10,
+            "durationInSecs": 90,
+            "registrationTimestamp": 1548775268995,
+            "lastRenewalTimestamp": 1548799562042,
+            "evictionTimestamp": 0,
+            "serviceUpTimestamp": 1548739784844
+          },
+          "metadata": {
+            "management.port": "8080"
+          },
+          "homePageUrl": "http://host-154.us-west-2.compute.internal:8080/",
+          "statusPageUrl": "http://host-154.us-west-2.compute.internal:8080/info",
+          "healthCheckUrl": "http://host-154.us-west-2.compute.internal:8080/health",
+          "vipAddress": "SICILY",
+          "secureVipAddress": "SICILY",
+          "isCoordinatingDiscoveryServer": "false",
+          "lastUpdatedTimestamp": "1548775268996",
+          "lastDirtyTimestamp": "1548775268317",
+          "actionType": "ADDED"
+        }
+      ]
     }
   ]
 }
