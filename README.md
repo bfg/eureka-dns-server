@@ -10,17 +10,17 @@ service registry which can be ran as a standalone daemon or embedded in any java
 itself.
 
 Services registered in eureka registry are being exposed as DNS names without need to contact eureka registry via it's 
-REST interface, which can be cumbersome task in languages without native `eureka-client` support. Accessing your service
-can be as easy as:
+REST interface, which can be a cumbersome task in languages without native `eureka-client` support (javascript, ruby, 
+python). Accessing your service can be as easy as:
 
 ```
-curl http://microservice.service.eureka/
+curl http://my-service.service.eureka/
 ```
 
 # IPv6 support
 
-Server supports automatic discovery and binding to IPv6 addresses if they are available at runtime. `AAAA` records are
-returned as well if service registers in eureka using IPv6 address.
+Server supports automatic discovery of available IP addresses and will bind all of them by default, including IPv6 ones.
+`AAAA` records are being returned for service instances that are registered to eureka service registry with IPv6 address.
 
 # DNS interface
 
@@ -35,12 +35,6 @@ default eureka client configured region.
 
 ```
 $ dig @localhost -p 8553  myapp.service.eureka 
-; <<>> DiG 9.11.4-3ubuntu5.1-Ubuntu <<>> @localhost -p 8553 myapp.service.eureka
-; (1 server found)
-;; global options: +cmd
-;; Got answer:
-;; ->>HEADER<<- opcode: QUERY, status: NOERROR, id: 44797
-;; flags: qr; QUERY: 1, ANSWER: 1, AUTHORITY: 0, ADDITIONAL: 0
 
 ;; QUESTION SECTION:
 ;myapp.service.eureka.       IN      A
@@ -53,12 +47,6 @@ IPv6 records are being returned as well if there are services registered to eure
 
 ```
 $ dig @localhost -p 8553  myapp.service.eureka AAAA
-; <<>> DiG 9.11.4-3ubuntu5.1-Ubuntu <<>> @localhost -p 8553 myapp.service.eureka
-; (1 server found)
-;; global options: +cmd
-;; Got answer:
-;; ->>HEADER<<- opcode: QUERY, status: NOERROR, id: 44797
-;; flags: qr; QUERY: 1, ANSWER: 1, AUTHORITY: 0, ADDITIONAL: 0
 
 ;; QUESTION SECTION:
 ;myapp.service.eureka.       IN      AAAA
@@ -73,12 +61,6 @@ Asking for service TXT record returns list of active urls for given service:
 
 ```
 $ dig @localhost -p 8553  myapp.service.eureka TXT
-; <<>> DiG 9.11.4-3ubuntu5.1-Ubuntu <<>> @localhost -p 8553 myapp.service.eureka TXT
-; (1 server found)
-;; global options: +cmd
-;; Got answer:
-;; ->>HEADER<<- opcode: QUERY, status: NOERROR, id: 53560
-;; flags: qr; QUERY: 1, ANSWER: 1, AUTHORITY: 0, ADDITIONAL: 0
 
 ;; QUESTION SECTION:
 ;myapp.service.eureka.       IN      TXT
@@ -89,19 +71,13 @@ myapp.service.eureka. 5      IN      TXT     "http://10.11.3.142:32769/"
 
 ### SRV lookups
 
-[RFC2782](https://www.ietf.org/rfc/rfc2782.txt) are supported as well:
+#### normal SRV lookup
 
 ```
 $ dig @localhost -p 8553  other-app.service.eureka SRV
-; <<>> DiG 9.11.4-3ubuntu5.1-Ubuntu <<>> @localhost -p 8553 morse-bfg.service.eureka SRV
-; (1 server found)
-;; global options: +cmd
-;; Got answer:
-;; ->>HEADER<<- opcode: QUERY, status: NOERROR, id: 20288
-;; flags: qr; QUERY: 1, ANSWER: 1, AUTHORITY: 0, ADDITIONAL: 1
 
 ;; QUESTION SECTION:
-;morse-bfg.service.eureka.      IN      SRV
+;other-app.service.eureka.      IN      SRV
 
 ;; ANSWER SECTION:
 other-app.service.eureka. 5     IN      SRV     1 10 8080 ip-10-11-4-219.us-west-2.compute.internal.
@@ -112,13 +88,51 @@ ip-10-11-4-219.us-west-2.compute.internal. 5 IN A 10.11.4.219
 v6-host.us-west-2.compute.internal.        5 IN A ::1
 ```
 
+#### RFC2782 SRV lookup
+[RFC2782](https://www.ietf.org/rfc/rfc2782.txt) are supported as well:
+
+```
+$ dig @localhost -p 8553 _other-app._tcp.service.eureka SRV
+
+;; QUESTION SECTION:
+;_other-app._tcp.service.eureka.      IN      SRV
+
+;; ANSWER SECTION:
+_other-app._tcp.service.eureka. 5     IN      SRV     1 10 8080 ip-10-11-4-219.us-west-2.compute.internal.
+_other-app._tcp.service.eureka. 5     IN      SRV     1 10 8080 v6-host.us-west-2.compute.internal.
+
+;; ADDITIONAL SECTION:
+ip-10-11-4-219.us-west-2.compute.internal. 5 IN A 10.11.4.219
+v6-host.us-west-2.compute.internal.        5 IN A ::1
+```
+
 ## Limitations
 
 Eureka dns server doesn't allow DNS lookups over TCP, therefore clients can easily hit infamous
 [DNS 512 byte payload size limit](https://tools.ietf.org/id/draft-madi-dnsop-udp4dns-00.html) or may receive truncated
-response without clients being aware of it. This should not be a problem if eureka-dns-server is just a delegate resolver
-for a single domain for existing DNS server (bind, unbound, dnsmasq), because these services speak EDNS0 and are
-commonly able to process UDP packets up to 4096 bytes.   
+response without being aware of it. This should not be a problem if eureka-dns-server is just a delegate resolver
+for a single domain for an existing DNS server (bind, unbound, dnsmasq), because these services speak EDNS0 and are
+commonly able to process UDP packets with payload size up to 4096 bytes.
+
+# Usage
+
+To use eureka-dns-server, you need at least java 8 runtime, java 11 should work as well.
+
+##### maven
+
+```xml
+<dependency>
+    <groupId>com.github.bfg.eureka</groupId>
+    <artifactId>eureka-dns-server</artifactId>
+    <version>latest-version</version>
+</dependency>
+```
+
+##### gradle   
+
+```gradle
+compile     "com.github.bfg.eureka:eureka-dns-server:<latest-version>"
+```
 
 # Running
 
@@ -185,9 +199,8 @@ Usage: <main class> [-hlV] [-c=<eurekaPropertiesFile>] [-p=<port>]
 
 ### Running as docker image
 
-[eureka-dns-server](docker image) is [standalone module] packaged as docker container; it's usage is exactly the same
- to standalone daemon, just don't forget to expose listening
-port:
+[eureka-dns-server][docker image] is [standalone module] packaged as docker container; it's usage is exactly the same
+as standalone daemon, just don't forget to expose listening port:
 
 ```
 docker run -m 384m -it --rm -p 8553:8553/udp gracnar/eureka-dns-server -e http://eureka.example.com/eureka
@@ -213,31 +226,38 @@ dependencies to classpath.
 
 Eureka DNS server is meant to be just a delegated resolver for a single domain; this means that you need to set up your
 current DNS server in your network to delegate DNS queries for `.eureka` domain to eureka dns server. Please read
-excellent [consul DNS zone forwarding guide](https://www.consul.io/docs/guides/forwarding.html) guide how to configure
-different DNS servers.  
+excellent [consul DNS zone forwarding guide](https://www.consul.io/docs/guides/forwarding.html) how to configure
+different DNS servers.
 
 # Building
 
-To build this project you need at least JDK 8 installed. Build with JDK11 was tested as well.
+To build this project you need at least JDK 8 installed. You also need `dig` installed because it's being used by 
+integration tests.
 
 ```bash
-./gradlew build
+./gradlew clean build
 ```
 
 # Performance
 
 Eureka DNS server is built on top of [netty](https://netty.io/) and is able to utilize epoll/kqueue based transports
-if they are available on classpath; [eureka dns server standalone](standalone module) submodule and 
-[docker image](docker image) already include epoll dependencies by default which enable `SO_REUSEPORT` functionality
+if they are available on classpath; [eureka dns server standalone][standalone module] submodule and 
+[docker image] already include epoll dependencies by default which enable `SO_REUSEPORT` functionality
 leading to almost linear scaling across cpu cores.
 
-Project contains benchmark script, which allows you to test actual performance of eureka dns server on your setup
-(requires [dnsperf] installed). Here are figures on my laptop with i7-8550u CPU using 1 worker thread on linux:
+Project contains `scripts/performance-test.sh` script, which allows you to test actual performance of eureka dns server
+on your setup (requires [dnsperf] installed).
+
+Server was started as docker container with host networking to reduce NAT overhead. Script was invoked like this: 
 
 ```
-DNS Performance Testing Tool
-Nominum Version 2.1.1.0.d
+./scripts/performance-test.sh {existing-a,existing-b,non-existing}.service.eureka
+```
 
+Here are figures on my laptop with i7-8550u CPU on linux:
+
+* 1 worker thread: `docker run -it --rm -m384m --network host gracnar/eureka-dns-server -e http://eureka.example.com/eureka`
+```
 [Status] Command line: dnsperf -s 127.0.0.1 -p 8553 -l 20 -c 100
 [Status] Sending queries (to 127.0.0.1)
 [Status] Started at: Mon Feb 25 02:14:23 2019
@@ -258,10 +278,28 @@ Statistics:
   Average Latency (s):  0.001285 (min 0.000030, max 0.017320)
   Latency StdDev (s):   0.000369
 ```
+* all available worker threads: `docker run -it --rm -m384m --network host gracnar/eureka-dns-server -e http://eureka.example.com/eureka -t 0`
+```
+[Status] Command line: dnsperf -s 127.0.0.1 -p 8553 -l 20 -c 100
+[Status] Sending queries (to 127.0.0.1)
+[Status] Started at: Wed Feb 27 00:52:33 2019
+[Status] Stopping after 20.000000 seconds
+[Status] Testing complete (time limit)
 
-* with 1 worker thread
+Statistics:
 
+  Queries sent:         3578467u
+  Queries completed:    3578467u (100.00%)
+  Queries lost:         0u (0.00%)
 
+  Response codes:       NOERROR 2147785u (60.02%), NXDOMAIN 1430682u (39.98%)
+  Average packet size:  request 41, response 65
+  Run time (s):         20.000170
+  Queries per second:   178921.829164
+
+  Average Latency (s):  0.000157 (min 0.000013, max 0.068128)
+  Latency StdDev (s):   0.000571
+```
 
 [docker image]: https://cloud.docker.com/repository/docker/gracnar/eureka-dns-server/
 [standalone module]: eureka-dns-server-standalone
