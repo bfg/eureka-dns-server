@@ -28,7 +28,7 @@ EOF
   exit 1
 fi
 
-generate_queries "$@" | dnsperf -s 127.0.0.1 -p 5353 -l 20 -c 100
+generate_queries "$@" | dnsperf -s 127.0.0.1 -p 8553 -l 20 -c 100
 
 # vim:shiftwidth=2 softtabstop=2 expandtab
 # EOF

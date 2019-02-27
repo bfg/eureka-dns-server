@@ -37,7 +37,7 @@ import java.util.stream.Collectors;
  * Command line starter for {@link EurekaDnsServer}.
  */
 @Slf4j
-@Command(mixinStandardHelpOptions = true, versionProvider = VersionProvider.class)
+@Command(mixinStandardHelpOptions = true, sortOptions = false, versionProvider = VersionProvider.class)
 public class EurekaDnsServerCli implements Callable<Integer> {
     /**
      * Default server config.
@@ -48,14 +48,18 @@ public class EurekaDnsServerCli implements Callable<Integer> {
     @Option(names = {"-c", "--config"}, description = "Path to eureka properties file.")
     private String eurekaPropertiesFile = "";
 
-    @Option(names = {"-e", "--eureka-url"}, description = "Override eureka urls")
+    @Option(names = {"-e", "--eureka-url"}, description = "Comma separated list of eureka server URLs.")
     private List<String> eurekaUrls = new ArrayList<>();
 
-    @Option(names = {"-p", "--port"}, description = "DNS server listening port")
+    @Option(names = {"-p", "--port"}, description = "DNS server listening port.")
     private int port = config.getPort();
 
-    @Option(names = {"-t", "--threads"}, description = "Number of working threads, set only if native transport is available.")
+    @Option(names = {"-t", "--threads"}, description = "Number of working threads, set only if native transport is " +
+            "available; setting this number to 0 sets number of worker threads to number of available CPU cores.")
     private int threads = config.getMaxThreads();
+
+    @Option(names = {"-l", "--log-queries"}, description = "Log received queries.")
+    private boolean logQueries = config.isLogQueries();
 
     /**
      * Stdout stream.
@@ -112,15 +116,11 @@ public class EurekaDnsServerCli implements Callable<Integer> {
 
     @Override
     public Integer call() {
-        // create eureka client if needed.
-        val eurekaClient = Optional.ofNullable(config.getEurekaClient())
-                .orElseGet(() -> createEurekaClient());
-
-        val server = config
+        val server = config.clone()
                 .setPort(port)
                 .setMaxThreads(threads)
-                .setEurekaClient(eurekaClient)
-                .setLogQueries(true)
+                .setLogQueries(logQueries)
+                .setEurekaClient(getEurekaClient())
                 .create();
 
         server.run();
@@ -164,6 +164,16 @@ public class EurekaDnsServerCli implements Callable<Integer> {
     protected int exit(int exitStatus) {
         System.exit(exitStatus);
         return exitStatus;
+    }
+
+    /**
+     * Retrieves or creates eureka client.
+     *
+     * @return eureka client
+     */
+    private EurekaClient getEurekaClient() {
+        return Optional.ofNullable(config.getEurekaClient())
+                .orElseGet(() -> createEurekaClient());
     }
 
     private EurekaClient createEurekaClient() {

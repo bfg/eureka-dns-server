@@ -47,7 +47,7 @@ class DnsServerConfigSpec extends Specification {
         def config = new DnsServerConfig().setEurekaClient(eurekaClient)
 
         expect:
-        config.getPort() == 5353
+        config.getPort() == 8553
         config.getEurekaClient().is(eurekaClient)
         config.getAddresses().isEmpty()
         config.getEventLoopGroup() == null

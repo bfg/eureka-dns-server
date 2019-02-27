@@ -21,7 +21,7 @@ public final class DnsServerConfig implements Cloneable {
     /**
      * UDP listening port.
      */
-    private int port = 5353;
+    private int port = 8553;
 
     /**
      * List of listening addresses. If empty all discovered DNS addresses will be used.
@@ -44,7 +44,7 @@ public final class DnsServerConfig implements Cloneable {
     private int ttl = 5;
 
     /**
-     * Maximum number of host records to respond with to {@code A} and {@code AAAA} queries.
+     * Maximum number of host records to return to the client.
      */
     private int maxResponses = 5;
 
