@@ -272,9 +272,14 @@ run_java_service() {
     append_java_tool_options "--illegal-access=warn"
   fi
 
-  # if we're running on java11+ we can set additional java tool options
-  if [ $(java_version) -ge 11 ] && running_as_docker; then
-    append_java_tool_options "-XX:+UseContainerSupport"
+  # java 11 goodies
+  if [ $(java_version) -ge 11 ]; then
+    # use Graal JIT compiler
+    append_java_tool_options "-XX:+UnlockExperimentalVMOptions -XX:+UseJVMCICompiler"
+
+    if running_as_docker; then
+      append_java_tool_options "-XX:+UseContainerSupport"
+    fi
   fi
 
   # disable inifinite DNS caching
