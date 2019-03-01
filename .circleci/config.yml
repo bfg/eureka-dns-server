@@ -48,7 +48,7 @@ jobs:
 
       - run:
           name: Upload artifacts to maven repository
-          command: test -z "$CIRCLE_PR_USERNAME" && ./gradlew eureka-dns-server:uploadArchives
+          command: test -z "$CIRCLE_PR_USERNAME" && test -z "$CIRCLE_TAG" && ./gradlew eureka-dns-server:uploadArchives
 
       # setup remote docker
       - setup_remote_docker:
