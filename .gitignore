@@ -25,6 +25,9 @@ out/
 # swap files
 *.*swp
 
+# env files
+.env
+
 # generated documentation
 */src/main/docs/*/generated
 
