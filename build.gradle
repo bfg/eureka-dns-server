@@ -11,7 +11,7 @@ buildscript {
     groovyVersion             = "2.5.5"
     spockVersion              = "1.2-groovy-2.5"
 
-    nettyVersion              = "4.1.33.Final"
+    nettyVersion              = "4.1.34.Final"
     springBootVersion         = "1.5.19.RELEASE"
     springCloudVersion        = "Edgware.SR5"
 

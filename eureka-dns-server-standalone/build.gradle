@@ -2,22 +2,10 @@
 // build.gradle
 //
 
-buildscript {
-  // shadow plugin 4.0.4 fails with palantir's docker plugin
-  // see: https://github.com/johnrengelman/shadow/pull/460
-  dependencies {
-    classpath files("libs/shadow-5.0.0-SNAPSHOT.jar")
-  }
-}
-
 plugins {
   id "application"
   id "com.gorylenko.gradle-git-properties"  version "2.0.0"
-
-  // shadow plugin 4.0.4 fails with palantir's docker plugin
-  // see: https://github.com/johnrengelman/shadow/pull/460
-  //
-  // id "com.github.johnrengelman.shadow"      version "4.0.4"
+  id "com.github.johnrengelman.shadow"      version "5.0.0"
 
   // docker support
   id "com.palantir.git-version"             version "0.12.0-rc2"
