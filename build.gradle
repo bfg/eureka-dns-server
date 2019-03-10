@@ -1,3 +1,5 @@
+import com.sun.corba.se.impl.ior.ObjectReferenceFactoryImpl
+
 //
 // build.gradle
 //
@@ -8,7 +10,7 @@ buildscript {
     slf4jVersion              = "1.7.25"
     logbackVersion            = "1.2.3"
 
-    groovyVersion             = "2.5.5"
+    groovyVersion             = "2.5.6"
     spockVersion              = "1.2-groovy-2.5"
 
     nettyVersion              = "4.1.34.Final"
@@ -20,6 +22,7 @@ buildscript {
 }
 
 plugins {
+  id "java-library"
   id "net.researchgate.release"             version "2.8.0"
   id "io.spring.dependency-management"      version "1.0.6.RELEASE"
   id "com.adarshr.test-logger"              version "1.6.0"
@@ -39,6 +42,7 @@ def getProjectProp(name, defaultValue) {
 
 allprojects {
   apply plugin: "java"
+  apply plugin: "java-library"
   apply plugin: "groovy"
   apply plugin: "idea"
   apply plugin: "eclipse"
@@ -51,6 +55,23 @@ allprojects {
   repositories {
     mavenLocal()
     mavenCentral()
+
+    /*
+    maven {
+      def urlReleases = "https://oss.sonatype.org/content/repositories/snapshots/"
+      def urlSnapshots = "https://oss.sonatype.org/service/local/staging/deploy/maven2/"
+
+      name    "sonatypeOssrh"
+      url = isReleaseVersion ? urlSnapshots : urlReleases
+      credentials {
+        username getProjectProp('osshr.user', 'some-osshr-user')
+        password getProjectProp('osshr.pass', 'some-osshr-pass')
+      }
+      content {
+        includeGroup project.group
+      }
+    }
+  */
   }
 
   dependencyManagement {
@@ -84,11 +105,11 @@ allprojects {
     compileOnly             "javax.annotation:javax.annotation-api:1.3.2"
 
     testAnnotationProcessor "org.projectlombok:lombok"
-    testCompile             "org.slf4j:slf4j-api"
-    testCompile             "org.codehaus.groovy:groovy-all"
-    testCompile             "org.spockframework:spock-core"
-    testCompile             "ch.qos.logback:logback-classic"
+    testImplementation      "org.codehaus.groovy:groovy-all"
+    testImplementation      "org.spockframework:spock-core"
+    testImplementation      "ch.qos.logback:logback-classic"
   }
+
 
   plugins.withType(JavaPlugin) {
     // java bytecode version
@@ -104,18 +125,22 @@ allprojects {
     // create sources jar
     task sourcesJar(type: Jar, dependsOn: classes, overwrite: false) {
       classifier = "sources"
-      from sourceSets.main.allSource, sourceSets.main.java, sourceSets.main.groovy
+      from sourceSets.main.allJava
     }
 
     // javadoc options
     javadoc {
       options.encoding "UTF-8"
       options.addStringOption("Xdoclint:none", "-quiet")
+
+      if(JavaVersion.current().isJava9Compatible()) {
+        options.addBooleanOption('html5', true)
+      }
     }
 
     task javadocJar(type: Jar, dependsOn: [classes, javadoc], overwrite: false) {
+      from javadoc
       classifier = "javadoc"
-      from javadoc.destinationDir
     }
 
     // add compileOnly dependencies to test runtime classpath as well.
@@ -126,15 +151,23 @@ allprojects {
 
     // set publish repos only if there are any sources to publish
     if (hasSources) {
+
       publishing {
         repositories {
-          // https://discuss.gradle.org/t/maven-publish-specify-a-repo-as-being-a-snapshot-repo/374
-          // add project.version.endsWith("-SNAPSHOT") ?
-          //        project.repositories.snapshots : project.repositories.releases
+          maven {
+            def urlReleases   = "https://oss.sonatype.org/content/repositories/snapshots/"
+            def urlSnapshots  = "https://oss.sonatype.org/service/local/staging/deploy/maven2/"
+
+            url = isReleaseVersion ? urlSnapshots : urlReleases
+            credentials {
+              username getProjectProp('osshr.user', 'some-osshr-user')
+              password getProjectProp('osshr.pass', 'some-osshr-pass')
+            }
+          }
         }
 
         publications {
-          main(MavenPublication) {
+          mavenJava(MavenPublication) {
             from components.java
 
             if (tasks.findByName("sourcesJar")) {
@@ -142,6 +175,38 @@ allprojects {
             }
             if (tasks.findByName("javadocJar")) {
               artifact javadocJar
+            }
+
+            pom {
+              name        = "Eureka DNS server"
+              //packaging   = "jar"
+              description = "DNS server interface to Eureka service registry"
+              url         = "https://github.com/bfg/eureka-dns-server/"
+
+              scm {
+                connection          = "scm:git:https://github.com/bfg/eureka-dns-server.git"
+                developerConnection = "scm:git:https://github.com/bfg/eureka-dns-server.git"
+                url                 = "https://github.com/bfg/eureka-dns-server/"
+              }
+
+              licenses {
+                license {
+                  name  = "The Apache License, Version 2.0"
+                  url   = "http://www.apache.org/licenses/LICENSE-2.0.txt"
+                }
+              }
+
+              developers {
+                developer {
+                  id    = "bfg"
+                  name  = "Brane F. Gračnar"
+                }
+                developer {
+                  id    = "github"
+                  name  = "Github project contributors"
+                  url   = "https://github.com/bfg/eureka-dns-server/graphs/contributors"
+                }
+              }
             }
           }
         }
@@ -156,8 +221,23 @@ allprojects {
   }
 
   signing {
-    required { isReleaseVersion && gradle.taskGraph.hasTask("uploadArchives") }
+    //required { isReleaseVersion && gradle.taskGraph.hasTask("uploadArchives") }
+
+    // fetch signing key from gpg-agent
+    // NOTE: don't forget to set gpg key id in `signing.gnupg.keyName` gradle property (~/.gradle.properties)
+    useGpgCmd()
+
+    // define what to sign
     sign configurations.archives
+  }
+
+  tasks.withType(Sign) {
+    // only do gpg sign if there is key defined and this is a release build
+    onlyIf {
+      isReleaseVersion &&
+      project.hasProperty('signing.gnupg.keyName') &&
+      gradle.taskGraph.hasTask("uploadArchives")
+    }
   }
 
   uploadArchives {
@@ -165,17 +245,20 @@ allprojects {
       mavenDeployer {
         beforeDeployment { MavenDeployment deployment -> signing.signPom(deployment) }
 
-        repository(url: "https://oss.sonatype.org/service/local/staging/deploy/maven2/") {
+
+        /*
+        repository(url: repoUrlReleases) {
           authentication(
                   userName: getProjectProp('osshr.user', 'some-osshr-user'),
                   password: getProjectProp('osshr.pass', 'some-osshr-pass'))
         }
 
-        snapshotRepository(url: "https://oss.sonatype.org/content/repositories/snapshots/") {
+        snapshotRepository(url: repoUrlSnapshots) {
           authentication(
                   userName: getProjectProp('osshr.user', 'some-osshr-user'),
                   password: getProjectProp('osshr.pass', 'some-osshr-pass'))
         }
+        */
 
         pom.project {
           name        "Eureka DNS server"

@@ -49,7 +49,7 @@ class DnsClient {
      */
     DnsResponse resolve(String name, String type = "A", String dnsClass = "IN") {
         def ts = System.nanoTime()
-        def command = [binary, '+tries=1', '+timeout=1', '-p', port, "@${address}",
+        def command = [binary, '+tries=1', '+timeout=2', '-p', port, "@${address}",
                        '-c', dnsClass, '-t', type, name] as String[]
         def process = new ProcessBuilder(command).start()
         log.debug("started command {} as {}", command.toList(), process)

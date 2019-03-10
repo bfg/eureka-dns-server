@@ -3,7 +3,7 @@
 //
 
 configurations {
-  testOutput.extendsFrom (testCompile)
+  testOutput.extendsFrom (testImplementation)
 }
 
 task testJar (type: Jar, dependsOn: testClasses) {
@@ -16,30 +16,29 @@ artifacts {
 }
 
 dependencies {
+  implementation      "org.slf4j:slf4j-api"
+  implementation      ("com.google.guava:guava:27.0.1-jre") { transitive = false }
 
-  compile           "org.slf4j:slf4j-api"
-  compile           ("com.google.guava:guava:27.0.1-jre") { transitive = false }
-
-  compile           "com.netflix.eureka:eureka-client"
-  compile           "io.netty:netty-codec-dns"
-  compileOnly       "io.netty:netty-transport-native-epoll:${nettyVersion}:linux-x86_64"
+  implementation      "com.netflix.eureka:eureka-client"
+  implementation      "io.netty:netty-codec-dns"
+  compileOnly         "io.netty:netty-transport-native-epoll:${nettyVersion}:linux-x86_64"
 
   // spring support
-  compileOnly       "org.springframework:spring-context:"
-  compileOnly       "org.springframework.boot:spring-boot"
-  compileOnly       "org.springframework.boot:spring-boot-autoconfigure"
+  compileOnly         "org.springframework:spring-context:"
+  compileOnly         "org.springframework.boot:spring-boot"
+  compileOnly         "org.springframework.boot:spring-boot-autoconfigure"
 
   // tests
-  testCompile       "com.google.inject:guice:4.2.2"
-  testCompile       "com.fasterxml.jackson.core:jackson-databind:2.6.5"
-  testCompile       "org.slf4j:jcl-over-slf4j"
-  testCompile       "ch.qos.logback:logback-classic"
+  testImplementation  "com.google.inject:guice:4.2.2"
+  testImplementation  "com.fasterxml.jackson.core:jackson-databind:2.6.5"
+  testImplementation  "org.slf4j:jcl-over-slf4j"
+  testImplementation  "ch.qos.logback:logback-classic"
 
   // spring test support
-  testCompile       "org.yaml:snakeyaml:1.23"
-  testCompile       "org.spockframework:spock-spring"
-  testCompile       "org.springframework.boot:spring-boot-starter-web"
-  testCompile       "org.springframework.boot:spring-boot-starter-test"
+  testImplementation  "org.yaml:snakeyaml:1.23"
+  testImplementation  "org.spockframework:spock-spring"
+  testImplementation  "org.springframework.boot:spring-boot-starter-web"
+  testImplementation  "org.springframework.boot:spring-boot-starter-test"
 }
 
 // vim:shiftwidth=2 softtabstop=2 expandtab

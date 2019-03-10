@@ -10,7 +10,6 @@ jobs:
     docker:
       - image: circleci/openjdk:11-jdk
     environment:
-      GRADLE_OPTS: -Xmx384M -Dorg.gradle.jvmargs=-Xmx384M
       TERM: dumb
 
     steps:
@@ -44,11 +43,14 @@ jobs:
 
       - run:
           name: Upload test coverage reports
-          command: test -z "$CIRCLE_PR_USERNAME" && bash <(curl -s https://codecov.io/bash)
+          command: bash <(curl -s https://codecov.io/bash)
 
       - run:
           name: Upload artifacts to maven repository
-          command: test -z "$CIRCLE_PR_USERNAME" && test -z "$CIRCLE_TAG" && ./gradlew eureka-dns-server:uploadArchives
+          command: |
+          if [ -z "$CIRCLE_PR_USERNAME" -a -z "$CIRCLE_TAG" ]; then
+            ./gradlew eureka-dns-server:publish
+          fi
 
       # setup remote docker
       - setup_remote_docker:
@@ -56,12 +58,18 @@ jobs:
       # login to docker hub
       - run:
           name: Docker hub login
-          command: test -z "$CIRCLE_PR_USERNAME" && docker login -u "$DOCKER_USER" -p "$DOCKER_PASS"
+          command: |
+          if [ -z "$CIRCLE_PR_USERNAME" ]; then
+            docker login -u "$DOCKER_USER" -p "$DOCKER_PASS"
+          fi
 
       # build and push docker image
       - run:
           name: Build and push docker image
-          command: test -z "$CIRCLE_PR_USERNAME" && ./gradlew eureka-dns-server-standalone:{docker,dockerPush}
+          command: |
+            if [ -z "$CIRCLE_PR_USERNAME" ]; then
+              ./gradlew eureka-dns-server-standalone:{docker,dockerPush}
+            fi
 
 # vim:shiftwidth=2 softtabstop=2 expandtab
 # EOF
