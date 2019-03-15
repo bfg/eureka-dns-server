@@ -48,9 +48,9 @@ jobs:
       - run:
           name: Upload artifacts to maven repository
           command: |
-          if [ -z "$CIRCLE_PR_USERNAME" -a -z "$CIRCLE_TAG" ]; then
-            ./gradlew eureka-dns-server:publish
-          fi
+            if [ -z "$CIRCLE_PR_USERNAME" -a -z "$CIRCLE_TAG" ]; then
+              ./gradlew eureka-dns-server:publish
+            fi
 
       # setup remote docker
       - setup_remote_docker:
@@ -59,9 +59,9 @@ jobs:
       - run:
           name: Docker hub login
           command: |
-          if [ -z "$CIRCLE_PR_USERNAME" ]; then
-            docker login -u "$DOCKER_USER" -p "$DOCKER_PASS"
-          fi
+            if [ -z "$CIRCLE_PR_USERNAME" ]; then
+              docker login -u "$DOCKER_USER" -p "$DOCKER_PASS"
+            fi
 
       # build and push docker image
       - run:
