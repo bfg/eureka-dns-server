@@ -1,6 +1,7 @@
 //
 // build.gradle
 //
+import io.franzbecker.gradle.lombok.task.DelombokTask
 
 buildscript {
   ext {
@@ -99,7 +100,6 @@ allprojects {
   sweeney {
     enforce "gradle:[5.2,)"   // require gradle >= 5.2
     enforce "jdk:[11,)"       // require JDK11
-    validate()
   }
 
   plugins.withType(JavaPlugin) {
@@ -119,8 +119,23 @@ allprojects {
       from sourceSets.main.allJava
     }
 
+    // delombok java sources before generating javadoc
+    task delombok(type: DelombokTask, dependsOn: compileJava) {
+      onlyIf { hasSources }
+
+      ext.outputDir = file("$buildDir/delombok")
+      outputs.dir(outputDir)
+      sourceSets.main.java.srcDirs.each {
+        inputs.dir(it)
+        args(it, "-q", "-d", outputDir)
+      }
+    }
+
     // javadoc options
     javadoc {
+      dependsOn delombok
+      source = delombok.outputDir
+
       options.encoding "UTF-8"
       options.addStringOption("Xdoclint:none", "-quiet")
 
