@@ -24,6 +24,7 @@ plugins {
   id "io.spring.dependency-management"      version "1.0.6.RELEASE"
   id "com.adarshr.test-logger"              version "1.6.0"
   id "io.franzbecker.gradle-lombok"         version "2.1"
+  id "com.fizzpod.sweeney"                  version "4.0.0"
 }
 
 ext.isReleaseVersion = !version.contains("-SNAPSHOT")
@@ -91,6 +92,14 @@ allprojects {
   lombok {
     version = "1.18.6"
     sha256  = "6373d9ade79efdc028cd48d40a9af9ac6a090dbcfaec55b438ec49556a4e92fb"
+  }
+
+  // enforce build rules
+  apply plugin: 'com.fizzpod.sweeney'
+  sweeney {
+    enforce "gradle:[5.2,)"   // require gradle >= 5.2
+    enforce "jdk:[11,)"       // require JDK11
+    validate()
   }
 
   plugins.withType(JavaPlugin) {
