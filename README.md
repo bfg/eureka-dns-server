@@ -4,6 +4,7 @@
 [![codecov](https://codecov.io/gh/bfg/eureka-dns-server/branch/master/graph/badge.svg)](https://codecov.io/gh/bfg/eureka-dns-server)
 [![latest release](https://img.shields.io/nexus/r/https/oss.sonatype.org/com.github.bfg.eureka/eureka-dns-server.svg)](https://mvnrepository.com/artifact/com.github.bfg.eureka/eureka-dns-server)
 [![latest snapshot](https://img.shields.io/nexus/s/https/oss.sonatype.org/com.github.bfg.eureka/eureka-dns-server.svg)](https://oss.sonatype.org/content/groups/public/com/github/bfg/eureka/eureka-dns-server/)
+[![Javadocs](http://javadoc.io/badge/com.github.bfg.eureka/eureka-dns-server.svg?color=blue)](http://javadoc.io/doc/com.github.bfg.eureka/eureka-dns-server)
 
 `eureka-dns-server` is RFC1035/2782 compatible DNS server interface to [Netflix eureka](https://github.com/Netflix/eureka)
 service registry which can be ran as a standalone daemon or embedded in any java application including eureka server 
