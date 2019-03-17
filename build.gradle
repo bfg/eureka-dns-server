@@ -1,5 +1,3 @@
-import com.sun.corba.se.impl.ior.ObjectReferenceFactoryImpl
-
 //
 // build.gradle
 //
@@ -55,23 +53,6 @@ allprojects {
   repositories {
     mavenLocal()
     mavenCentral()
-
-    /*
-    maven {
-      def urlReleases = "https://oss.sonatype.org/content/repositories/snapshots/"
-      def urlSnapshots = "https://oss.sonatype.org/service/local/staging/deploy/maven2/"
-
-      name    "sonatypeOssrh"
-      url = isReleaseVersion ? urlSnapshots : urlReleases
-      credentials {
-        username getProjectProp('osshr.user', 'some-osshr-user')
-        password getProjectProp('osshr.pass', 'some-osshr-pass')
-      }
-      content {
-        includeGroup project.group
-      }
-    }
-  */
   }
 
   dependencyManagement {
@@ -179,7 +160,6 @@ allprojects {
 
             pom {
               name        = "Eureka DNS server"
-              //packaging   = "jar"
               description = "DNS server interface to Eureka service registry"
               url         = "https://github.com/bfg/eureka-dns-server/"
 
@@ -221,14 +201,13 @@ allprojects {
   }
 
   signing {
-    //required { isReleaseVersion && gradle.taskGraph.hasTask("uploadArchives") }
-
     // fetch signing key from gpg-agent
     // NOTE: don't forget to set gpg key id in `signing.gnupg.keyName` gradle property (~/.gradle.properties)
     useGpgCmd()
 
     // define what to sign
-    sign configurations.archives
+    //sign configurations.archives
+    sign publishing.publications
   }
 
   tasks.withType(Sign) {
@@ -236,62 +215,7 @@ allprojects {
     onlyIf {
       isReleaseVersion &&
       project.hasProperty('signing.gnupg.keyName') &&
-      gradle.taskGraph.hasTask("uploadArchives")
-    }
-  }
-
-  uploadArchives {
-    repositories {
-      mavenDeployer {
-        beforeDeployment { MavenDeployment deployment -> signing.signPom(deployment) }
-
-
-        /*
-        repository(url: repoUrlReleases) {
-          authentication(
-                  userName: getProjectProp('osshr.user', 'some-osshr-user'),
-                  password: getProjectProp('osshr.pass', 'some-osshr-pass'))
-        }
-
-        snapshotRepository(url: repoUrlSnapshots) {
-          authentication(
-                  userName: getProjectProp('osshr.user', 'some-osshr-user'),
-                  password: getProjectProp('osshr.pass', 'some-osshr-pass'))
-        }
-        */
-
-        pom.project {
-          name        "Eureka DNS server"
-          packaging   "jar"
-          description "DNS server interface to Eureka service registry"
-          url         "https://github.com/bfg/eureka-dns-server/"
-
-          scm {
-            connection          "scm:git:https://github.com/bfg/eureka-dns-server.git"
-            developerConnection "scm:git:https://github.com/bfg/eureka-dns-server.git"
-            url                 "https://github.com/bfg/eureka-dns-server/"
-          }
-
-          licenses {
-            license {
-              name "The Apache License, Version 2.0"
-              url "http://www.apache.org/licenses/LICENSE-2.0.txt"
-            }
-          }
-
-          developers {
-            developer {
-              id    "bfg"
-              name  "Brane F. Gračnar"
-            }
-            developer {
-              id    "github"
-              name  "Github project contributors"
-              url   "https://github.com/bfg/eureka-dns-server/graphs/contributors"
-            }
-          }
-        }
-      }
+      gradle.taskGraph.hasTask("publish")
     }
   }
 
