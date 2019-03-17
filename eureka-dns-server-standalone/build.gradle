@@ -15,16 +15,19 @@ plugins {
 apply plugin: "com.github.johnrengelman.shadow"
 
 dependencies {
-  compileOnly       "org.projectlombok:lombok"
+  compileOnly         "org.projectlombok:lombok"
 
-  compile           "javax.inject:javax.inject:1"
-  compile           "org.slf4j:jcl-over-slf4j"
+  // main project artifact
+  implementation      project(":eureka-dns-server")
 
-  compile           "info.picocli:picocli:3.9.3"
-  compile           "ch.qos.logback:logback-classic"
-  compile           "io.netty:netty-transport-native-epoll:${nettyVersion}:linux-x86_64"
+  implementation      "javax.inject:javax.inject:1"
+  implementation      "com.netflix.eureka:eureka-client"
 
-  compile           project(":eureka-dns-server")
+  implementation      "org.slf4j:jcl-over-slf4j"
+
+  implementation      "info.picocli:picocli:3.9.5"
+  implementation      "ch.qos.logback:logback-classic"
+  implementation      "io.netty:netty-transport-native-epoll:${nettyVersion}:linux-x86_64"
 
   // main project test artifacts
   testCompile       project(path: ":eureka-dns-server", configuration: "testOutput")
@@ -55,7 +58,7 @@ shadowJar {
 
   mergeServiceFiles()
 }
-//build.finalizedBy shadowJar
+build.finalizedBy shadowJar
 
 // docker support
 docker {

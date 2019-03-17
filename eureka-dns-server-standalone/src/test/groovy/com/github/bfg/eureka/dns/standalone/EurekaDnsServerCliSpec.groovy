@@ -70,7 +70,7 @@ class EurekaDnsServerCliSpec extends Specification {
         cli.getConfig().setEurekaClient(eurekaClient)
         def thread = new Thread({ cli.run(args) })
         thread.start()
-        Thread.sleep(300)
+        Thread.sleep(800)
 
         when: "ask for simple record"
         log.info("asking for dns response")
