@@ -15,6 +15,7 @@ spring.profiles: test
 eureka:
   dns:
     server:
+      enabled: true
       port: 9553
       addresses: 127.0.0.1
       ttl: 9

@@ -9,6 +9,7 @@ import lombok.extern.slf4j.Slf4j;
 import lombok.val;
 import org.springframework.beans.factory.config.ConfigurableBeanFactory;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Scope;
@@ -29,6 +30,7 @@ public class EurekaDnsServerConfiguration {
     @Bean
     @SneakyThrows
     @ConditionalOnMissingBean
+    @ConditionalOnProperty(value = "eureka.dns.server.enabled")
     @Scope(ConfigurableBeanFactory.SCOPE_SINGLETON)
     public EurekaDnsServer eurekaDnsServer(@NonNull DnsServerConfig config, @NonNull EurekaClient eurekaClient) {
         val server = config.clone()
