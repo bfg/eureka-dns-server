@@ -117,22 +117,61 @@ commonly able to process UDP packets with payload size up to 4096 bytes.
 
 # Usage
 
-To use eureka-dns-server, you need at least java 8 runtime, java 11 should work as well.
+To use `eureka-dns-server`, you need at least java 8 runtime, java 11 works as well.
 
-##### maven
+### maven
 
+**release**
 ```xml
 <dependency>
     <groupId>com.github.bfg.eureka</groupId>
     <artifactId>eureka-dns-server</artifactId>
-    <version>latest-version</version>
+    <version>x.y.z</version>
 </dependency>
 ```
 
-##### gradle   
+**snapshot**
+
+```xml
+<repositories>
+  <repository>
+    <id>snapshots-repo</id>
+    <url>https://oss.sonatype.org/content/repositories/snapshots</url>
+    <releases><enabled>false</enabled></releases>
+    <snapshots><enabled>true</enabled></snapshots>
+  </repository>
+</repositories>
+
+<dependencies>
+  <dependency>
+    <groupId>com.github.bfg.eureka</groupId>
+    <artifactId>eureka-dns-server</artifactId>
+    <version>x.y.z-SNAPSHOT</version>
+  </dependency>
+</dependencies>
+```
+
+### gradle   
+
+**release**
+```gradle
+dependencies {
+  implementation  "com.github.bfg.eureka:eureka-dns-server:x.y.z"
+}
+```
+
+**snapshot**
 
 ```gradle
-compile     "com.github.bfg.eureka:eureka-dns-server:<latest-version>"
+repositories {
+  mavenLocal()
+  mavenCentral()
+  maven { url "https://oss.sonatype.org/content/repositories/snapshots" }
+}
+
+dependencies {
+  implementation  "com.github.bfg.eureka:eureka-dns-server:x.y.z-SNAPSHOT"
+}
 ```
 
 # Running
@@ -151,6 +190,9 @@ application by annotating application starter class with `@EnableEurekaDnsServer
 eureka:
   dns:
     server:
+      # dns server is disabled by default
+      enabled: true
+
       # server listening port, default: 8553
       port: 8553
 
@@ -232,13 +274,12 @@ different DNS servers.
 
 # Building
 
-To build this project you need at least JDK 8 installed. You also need `dig` installed because it's being used by 
-integration tests.
+To build this project you need at least JDK 11 installed, but code is compiled to JDK8 bytecode. You also need `dig`
+installed because it's being used by integration tests.
 
 ```bash
 ./gradlew clean build
 ```
-
 # Performance
 
 Eureka DNS server is built on top of [netty](https://netty.io/) and is able to utilize epoll/kqueue based transports
@@ -302,6 +343,63 @@ Statistics:
   Latency StdDev (s):   0.000571
 ```
 
+# Releasing
+
+Publishing releases to maven central is a bit tricky; project needs to align with
+[maven central requirements](https://central.sonatype.org/pages/requirements.html). Docker image is published to
+[docker hub][docker image] automatically by [CI][CI].
+
+#### Create and publish PGP key
+```
+gpg --full-gen-key
+```
+* publish created *public* key to public key registry
+```
+gpg --send-key --keyserver pool.sks-keyservers.net <keyid>
+```
+
+* setup ~/.gradle/gradle.properties
+```properties
+#
+# gradle.properties
+#
+
+# requires useGpgCmd() signing {} block
+signing.gnupg.keyName=<keyid>
+
+# vim:syntax=jproperties
+# EOF
+```
+
+#### Create release
+
+```
+git checkout master
+./gradlew release
+```
+
+#### Publish release to maven central staging repository
+
+* checkout correct tag
+```
+git checkout x.y.z
+```
+
+* build the project
+```
+./gradlew clean build
+```
+
+* publish release to Sonatype central staging
+
+```
+./gradlew publish
+```
+
+* follow [Sonatype OSSRH instructions](https://central.sonatype.org/pages/releasing-the-deployment.html) to release the
+publication
+
 [docker image]: https://cloud.docker.com/repository/docker/gracnar/eureka-dns-server/
 [standalone module]: eureka-dns-server-standalone
 [dnsperf]: https://github.com/DNS-OARC/dnsperf
+[CI]: https://circleci.com/gh/bfg/eureka-dns-server
