@@ -151,6 +151,9 @@ application by annotating application starter class with `@EnableEurekaDnsServer
 eureka:
   dns:
     server:
+      # by default, dns server is disabled
+      enabled: true
+
       # server listening port, default: 8553
       port: 8553
 

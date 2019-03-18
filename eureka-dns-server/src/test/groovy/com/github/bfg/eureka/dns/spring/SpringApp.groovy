@@ -10,6 +10,7 @@ import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.beans.factory.config.ConfigurableBeanFactory
 import org.springframework.boot.SpringApplication
 import org.springframework.boot.autoconfigure.SpringBootApplication
+import org.springframework.boot.autoconfigure.condition.ConditionalOnBean
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Scope
 import org.springframework.web.bind.annotation.GetMapping
@@ -43,6 +44,7 @@ class SpringApp {
     }
 
     @Bean
+    @ConditionalOnBean(EurekaDnsServer)
     String fooString(EurekaDnsServer server) {
         ConfigHolder.set(server.config)
         "fooString"
