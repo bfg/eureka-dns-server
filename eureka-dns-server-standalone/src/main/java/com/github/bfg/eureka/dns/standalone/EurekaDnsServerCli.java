@@ -123,6 +123,16 @@ public class EurekaDnsServerCli implements Callable<Integer> {
                 .setEurekaClient(getEurekaClient())
                 .create();
 
+        return runServer(server);
+    }
+
+    /**
+     * Runs given dns server.
+     *
+     * @param server dns server
+     * @return exit status
+     */
+    protected int runServer(EurekaDnsServer server) {
         server.run();
         return 0;
     }
@@ -224,14 +234,25 @@ public class EurekaDnsServerCli implements Callable<Integer> {
         }
     }
 
-    private void loadEurekaConfig() {
-        Optional.ofNullable(eurekaPropertiesFile)
+    /**
+     * Loads properties from {@link #eurekaPropertiesFile}.
+     *
+     * @return optional of loaded properties.
+     */
+    protected Optional<Properties> loadEurekaConfig() {
+        return Optional.ofNullable(eurekaPropertiesFile)
                 .map(String::trim)
                 .filter(e -> !e.isEmpty())
-                .ifPresent(this::loadEurekaConfig);
+                .map(this::loadEurekaConfig);
     }
 
-    private void loadEurekaConfig(@NonNull String filename) {
+    /**
+     * Loads properties from given file and sets them as system properties.
+     *
+     * @param filename filename
+     * @return loaded properties
+     */
+    protected Properties loadEurekaConfig(@NonNull String filename) {
         val path = Paths.get(filename);
         val properties = new Properties();
         try (val reader = Files.newBufferedReader(path)) {
@@ -244,5 +265,7 @@ public class EurekaDnsServerCli implements Callable<Integer> {
         properties.keySet().stream()
                 .map(Object::toString)
                 .forEach(key -> System.setProperty(key, properties.getProperty(key)));
+
+        return properties;
     }
 }

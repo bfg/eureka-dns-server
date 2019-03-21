@@ -1,10 +1,16 @@
 package com.github.bfg.eureka.dns.standalone
 
+import com.github.bfg.eureka.dns.EurekaDnsServer
 import com.github.bfg.eureka.dns.FakeEurekaClient
 import com.github.bfg.eureka.dns.client.DnsClient
+import com.netflix.discovery.DiscoveryClient
 import groovy.util.logging.Slf4j
 import spock.lang.Specification
 import spock.lang.Unroll
+import spock.util.environment.RestoreSystemProperties
+
+import java.util.concurrent.TimeUnit
+import java.util.function.Consumer
 
 @Slf4j
 @Unroll
@@ -58,7 +64,7 @@ class EurekaDnsServerCliSpec extends Specification {
         arg << ['-V', '--version']
     }
 
-    def "should actually start dns server"() {
+    def "should actually start dns server start listening for UDP redirects"() {
         given:
         def eurekaClient = FakeEurekaClient.defaults()
         def port = 9393
@@ -68,9 +74,8 @@ class EurekaDnsServerCliSpec extends Specification {
 
         and: "start dns server in a separate thread"
         cli.getConfig().setEurekaClient(eurekaClient)
-        def thread = new Thread({ cli.run(args) })
-        thread.start()
-        Thread.sleep(800)
+        cli.serverConsumer = { it.start().toCompletableFuture().get(1, TimeUnit.SECONDS) }
+        cli.run(args)
 
         when: "ask for simple record"
         log.info("asking for dns response")
@@ -79,6 +84,60 @@ class EurekaDnsServerCliSpec extends Specification {
         then:
         result.status == "NOERROR"
         result.answers.size() == 3
+
+        cleanup:
+        cli?.server?.close()
+    }
+
+    def "should actually start dns server and initialize eureka client"() {
+        given:
+        cli.serverConsumer = { it.start().toCompletableFuture().get(1, TimeUnit.SECONDS) }
+
+        when: "ask for simple record"
+        cli.run('-p', '3940')
+
+        then:
+        def eurekaClient = cli.server.config.eurekaClient
+        eurekaClient != null
+        eurekaClient instanceof DiscoveryClient
+
+        cleanup:
+        cli?.server?.close()
+    }
+
+    @RestoreSystemProperties
+    def "loadEurekaConfig([filename]) should load expected properties and set system properties"() {
+        given:
+        def filename = getClass().getResource('/eureka-client-test.properties').getFile()
+        def cli = new MyCli()
+
+        expect:
+        System.getProperty('eureka.instance.appname') == null
+        System.getProperty('eureka.registration.enabled') == null
+        System.getProperty('eureka.client.registration.enabled') == null
+
+        when:
+        cli.run('-c', filename)
+
+        then:
+        System.getProperty('eureka.instance.appname') == 'eureka-dns-server-test'
+        System.getProperty('eureka.registration.enabled') == 'false'
+        System.getProperty('eureka.client.registration.enabled') == 'false'
+    }
+
+    @RestoreSystemProperties
+    def "should set eureka urls"() {
+        given:
+        def urlA = 'http://foo/eureka'
+        def urlB = 'http://baz/eureka'
+
+        def cli = new MyCli()
+
+        when:
+        cli.run('-e', urlA, '-e', urlB)
+
+        then:
+        System.getProperty('eureka.serviceUrl.default') == urlA + ',' + urlB
     }
 
     /**
@@ -91,11 +150,22 @@ class EurekaDnsServerCliSpec extends Specification {
 
         def stderrOs = new ByteArrayOutputStream()
         def stderr = new PrintStream(stderrOs)
+        Consumer<EurekaDnsServer> serverConsumer
 
         int exitStatus = -1
 
         Throwable exception
         String dieReason
+        EurekaDnsServer server
+
+        @Override
+        protected int runServer(EurekaDnsServer server) {
+            if (serverConsumer) {
+                serverConsumer.accept(server)
+            }
+            this.server = server
+            return 0
+        }
 
         @Override
         protected PrintStream getStdout() {
