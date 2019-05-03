@@ -98,7 +98,7 @@ allprojects {
   // enforce build rules
   apply plugin: 'com.fizzpod.sweeney'
   sweeney {
-    enforce "gradle:[5.2,)"   // require gradle >= 5.2
+    enforce "gradle:[5.4,)"   // require gradle >= 5.4
     enforce "jdk:[11,)"       // require JDK11
   }
 
@@ -139,7 +139,7 @@ allprojects {
       options.encoding "UTF-8"
       options.addStringOption("Xdoclint:none", "-quiet")
 
-      if(JavaVersion.current().isJava9Compatible()) {
+      if (JavaVersion.current().isJava9Compatible()) {
         options.addBooleanOption('html5', true)
       }
     }
