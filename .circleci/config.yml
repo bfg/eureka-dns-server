@@ -18,11 +18,10 @@ jobs:
       - restore_cache:
           keys:
           - v3-dependencies-{{ checksum "build.gradle" }}
-          - v3-dependencies-
 
       - run:
           name: Ensure that dig(1) is installed
-          command: sudo apt install dnsutils
+          command: sudo apt update && sudo apt install dnsutils
 
       # run tests!
       - run:
