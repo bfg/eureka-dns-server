@@ -89,6 +89,7 @@ public class EurekaDnsServerCli implements Callable<Integer> {
      * @return exit status
      */
     @SneakyThrows
+    @SuppressWarnings("unchecked")
     protected final int run(String... args) {
         val cmdLine = new CommandLine(this);
 
