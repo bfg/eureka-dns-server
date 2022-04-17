@@ -17,7 +17,7 @@ jobs:
 
       - restore_cache:
           keys:
-          - v3-dependencies-{{ checksum "build.gradle" }}
+          - v4-dependencies-{{ checksum "build.gradle" }}
 
       - run:
           name: Ensure that dig(1) is installed
@@ -38,7 +38,7 @@ jobs:
           paths:
             - ~/.m2
             - ~/.gradle
-          key: v3-dependencies-{{ checksum "build.gradle" }}
+          key: v4-dependencies-{{ checksum "build.gradle" }}
 
       - run:
           name: Upload test coverage reports
