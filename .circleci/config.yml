@@ -8,7 +8,7 @@ version: 2
 jobs:
   build:
     docker:
-      - image: circleci/openjdk:11-jdk
+      - image: cimg/openjdk:11.0
     environment:
       TERM: dumb
 
@@ -17,12 +17,11 @@ jobs:
 
       - restore_cache:
           keys:
-          - v3-dependencies-{{ checksum "build.gradle" }}
-          - v3-dependencies-
+          - v4-dependencies-{{ checksum "build.gradle" }}
 
       - run:
           name: Ensure that dig(1) is installed
-          command: sudo apt install dnsutils
+          command: sudo apt update && sudo apt install dnsutils
 
       # run tests!
       - run:
@@ -39,7 +38,7 @@ jobs:
           paths:
             - ~/.m2
             - ~/.gradle
-          key: v3-dependencies-{{ checksum "build.gradle" }}
+          key: v4-dependencies-{{ checksum "build.gradle" }}
 
       - run:
           name: Upload test coverage reports

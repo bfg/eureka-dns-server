@@ -1,17 +1,16 @@
 //
 // build.gradle
 //
-import io.franzbecker.gradle.lombok.task.DelombokTask
 
 buildscript {
   ext {
-    slf4jVersion              = "1.7.25"
-    logbackVersion            = "1.2.3"
+    slf4jVersion              = "1.7.36"
+    logbackVersion            = "1.2.11"
 
-    groovyVersion             = "2.5.6"
-    spockVersion              = "1.3-groovy-2.5"
+    groovyVersion             = "3.0.9"
+    spockVersion              = "2.1-groovy-3.0"
 
-    nettyVersion              = "4.1.36.Final"
+    nettyVersion              = "4.1.76.Final"
     springBootVersion         = "1.5.20.RELEASE"
     springCloudVersion        = "Edgware.SR5"
 
@@ -21,11 +20,15 @@ buildscript {
 
 plugins {
   id "java-library"
-  id "net.researchgate.release"             version "2.8.0"
-  id "io.spring.dependency-management"      version "1.0.7.RELEASE"
-  id "com.adarshr.test-logger"              version "1.6.0"
-  id "io.franzbecker.gradle-lombok"         version "2.1"
-  id "com.fizzpod.sweeney"                  version "4.0.0"
+  id "net.researchgate.release"             version "2.8.1"
+  id "io.spring.dependency-management"      version "1.0.11.RELEASE"
+  id "com.adarshr.test-logger"              version "3.2.0"
+  id "io.franzbecker.gradle-lombok"         version "5.0.0"
+  id "com.fizzpod.sweeney"                  version "4.4.0"
+
+  // non-applied plugins
+  id "com.gorylenko.gradle-git-properties"  version "2.4.0" apply false
+  id "com.github.johnrengelman.shadow"      version "7.1.2" apply false
 }
 
 ext.isReleaseVersion = !version.contains("-SNAPSHOT")
@@ -41,12 +44,10 @@ def getProjectProp(name, defaultValue) {
 }
 
 allprojects {
-  apply plugin: "java"
   apply plugin: "java-library"
   apply plugin: "groovy"
   apply plugin: "idea"
   apply plugin: "eclipse"
-  apply plugin: "maven"
   apply plugin: "maven-publish"
   apply plugin: "signing"
   apply plugin: "io.spring.dependency-management"
@@ -75,6 +76,7 @@ allprojects {
       dependency  "ch.qos.logback:logback-classic:${logbackVersion}"
 
       dependency  "org.springframework.boot:spring-boot-starter-test:${springBootVersion}"
+      dependency  "info.picocli:picocli:4.6.3"
     }
   }
 
@@ -91,14 +93,13 @@ allprojects {
   // we ❤️❤️❤️ lombok!
   apply plugin: "io.franzbecker.gradle-lombok"
   lombok {
-    version = "1.18.6"
-    sha256  = "6373d9ade79efdc028cd48d40a9af9ac6a090dbcfaec55b438ec49556a4e92fb"
+    version = "1.18.22"
   }
 
   // enforce build rules
   apply plugin: 'com.fizzpod.sweeney'
   sweeney {
-    enforce "gradle:[5.4,)"   // require gradle >= 5.4
+    enforce "gradle:[7.4,)"   // require gradle >= 7.4
     enforce "jdk:[11,)"       // require JDK11
   }
 
@@ -115,27 +116,12 @@ allprojects {
 
     // create sources jar
     task sourcesJar(type: Jar, dependsOn: classes, overwrite: false) {
-      classifier = "sources"
+      archiveClassifier = "sources"
       from sourceSets.main.allJava
-    }
-
-    // delombok java sources before generating javadoc
-    task delombok(type: DelombokTask, dependsOn: compileJava) {
-      onlyIf { hasSources }
-
-      ext.outputDir = file("$buildDir/delombok")
-      outputs.dir(outputDir)
-      sourceSets.main.java.srcDirs.each {
-        inputs.dir(it)
-        args(it, "-q", "-d", outputDir)
-      }
     }
 
     // javadoc options
     javadoc {
-      dependsOn delombok
-      source = delombok.outputDir
-
       options.encoding "UTF-8"
       options.addStringOption("Xdoclint:none", "-quiet")
 
@@ -146,13 +132,13 @@ allprojects {
 
     task javadocJar(type: Jar, dependsOn: [classes, javadoc], overwrite: false) {
       from javadoc
-      classifier = "javadoc"
+      archiveClassifier = "javadoc"
     }
 
     // add compileOnly dependencies to test runtime classpath as well.
     sourceSets {
-      test.compileClasspath += configurations.compileOnly
-      test.runtimeClasspath += configurations.compileOnly
+      test.compileClasspath += configurations.compileClasspath
+      test.runtimeClasspath += configurations.compileClasspath
     }
 
     // set publish repos only if there are any sources to publish
@@ -248,7 +234,7 @@ allprojects {
 
   tasks.withType(GroovyCompile) {
     sourceCompatibility   = targetCompatibility = "${jdkByteCodeVersion}"
-    options.incremental   = true
+    //options.incremental   = true
     //options.verbose       = true
     options.compilerArgs  << "-Xlint:deprecation" << "-Xlint:unchecked"
   }
@@ -260,6 +246,11 @@ allprojects {
   tasks.withType(AbstractArchiveTask) {
     preserveFileTimestamps  = false
     reproducibleFileOrder   = true
+  }
+
+  test {
+    useJUnitPlatform()
+    failFast = true
   }
 
   testlogger {
@@ -278,14 +269,15 @@ subprojects {
   }
 
   jacoco {
-    toolVersion = "0.8.3"
+    toolVersion = "0.8.8"
   }
 
   jacocoTestReport {
+    dependsOn test
     reports {
-      xml.enabled true
-      csv.enabled false
-      html.destination file("${buildDir}/reports/jacoco/html")
+      xml.required        = true
+      csv.required        = false
+      html.outputLocation = layout.buildDirectory.dir('reports/jacoco/html')
     }
   }
 
@@ -294,10 +286,6 @@ subprojects {
 
   testResultsDirName = "$rootDir/build/junit"
   reporting.baseDir = "$rootDir/build/html/${project.name}"
-}
-
-test {
-  failFast = true
 }
 
 release {

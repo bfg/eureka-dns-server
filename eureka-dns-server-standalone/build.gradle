@@ -4,8 +4,8 @@
 
 plugins {
   id "application"
-  id "com.gorylenko.gradle-git-properties"  version "2.0.0"
-  id "com.github.johnrengelman.shadow"      version "5.0.0"
+  id "com.gorylenko.gradle-git-properties"
+  id "com.github.johnrengelman.shadow"
 
   // docker support
   id "com.palantir.git-version"             version "0.12.0-rc2"
@@ -25,47 +25,44 @@ dependencies {
 
   implementation      "org.slf4j:jcl-over-slf4j"
 
-  implementation      "info.picocli:picocli:3.9.5"
+  implementation      "info.picocli:picocli"
   implementation      "ch.qos.logback:logback-classic"
   implementation      "io.netty:netty-transport-native-epoll:${nettyVersion}:linux-x86_64"
 
   // main project test artifacts
-  testCompile       project(path: ":eureka-dns-server", configuration: "testOutput")
+  testImplementation  project(path: ":eureka-dns-server", configuration: "testOutput")
 }
 
 gitProperties {
-  dateFormat          = "yyyy-MM-dd' 'HH:mm:ssZ"
-  dateFormatTimeZone  = "UTC"
-  gitPropertiesDir    = "${project.buildDir}/resources/main"
+  dateFormat                = "yyyy-MM-dd'T'HH:mm:ssZ"
+  dateFormatTimeZone        = "UTC"
 
-  keys                = [ 'git.build.version', 'git.commit.id', 'git.commit.id.abbrev','git.commit.time' ]
+  keys                      = [ 'git.build.version', 'git.commit.id', 'git.commit.id.abbrev','git.commit.time' ]
 }
 
 application {
-  mainClassName = "com.github.bfg.eureka.dns.standalone.EurekaDnsServerCli"
+  mainClass = "com.github.bfg.eureka.dns.standalone.EurekaDnsServerCli"
 }
-
-// disable creation of distribution archives
-distZip.enabled = distTar.enabled = shadowDistTar.enabled = shadowDistZip.enabled = false
 
 // don't publish any artifacts to maven repo.
 tasks.withType(PublishToMavenRepository).all { it.onlyIf { false } }
 
 // shadow uberjar support
 shadowJar {
-  baseName = "eureka-dns-server"
-  classifier = null
+  archiveBaseName   = "eureka-dns-server"
+  archiveClassifier = "all"
 
   mergeServiceFiles()
 }
-build.finalizedBy shadowJar
+distZip.enabled = distTar.enabled = shadowDistTar.enabled = shadowDistZip.enabled = false
+
 
 // docker support
 docker {
   name        "gracnar/eureka-dns-server:${version}"
   dockerfile  file("Dockerfile")
 
-  def artifact = "eureka-dns-server-${version}.jar"
+  def artifact = "eureka-dns-server-${version}-all.jar"
   files       "build/libs/${artifact}",
                  "${rootProject.projectDir}/scripts/java-service-starter"
   buildArgs   "serviceJar": "${artifact}"

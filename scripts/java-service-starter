@@ -4,18 +4,11 @@
 #                      GLOBALS                        #
 #######################################################
 
-# directory containing files with environment variables which should
-# be sourced before starting the service
-ENV_DIR=${ENV_DIR:-"/run/env_vars"}
-
-# remove env file after it has been
-ENV_REMOVE=${ENV_REMOVE:-"0"}
-
 # debug env vars before service startup
 ENV_DEBUG=${ENV_DEBUG:-"0"}
 
 # service directory (it should contain at least one executable jar)
-SERVICE_DIR=${SERVICE_DIR:-"/service"}
+APP_DIR=${APP_DIR:-"/app"}
 
 # java options
 JAVA_CLASS=${JAVA_CLASS:-""}
@@ -63,53 +56,6 @@ running_as_docker() {
   test -f "/.dockerenv"
 }
 
-load_env_file() {
-  local file="$1"
-  test -f "$file" -a -r "$file" || {
-    msg_warn "Cannot load env file, not a readable file: $file"
-    return 0
-  }
-
-  local ts_start=$(date +%s)
-
-  # source the file
-  . "$file"
-  local rv=$?
-
-  local ts_end=$(date +%s)
-  local duration=$((${ts_end} - ${ts_start}))
-
-  if [ "$rv" != "0" ]; then
-    die "Error sourcing env file '$file' after $duration second(s), return status: $rv"
-    return 1
-  fi
-
-  msg_info "Successfully sourced env file '$file' in $duration second(s)"
-
-  if [ "$ENV_REMOVE" = "1" ]; then
-    rm -f "$file" || msg_warn "Error removing env file: $file"
-  fi
-}
-
-load_env_files() {
-  local env_dir=""
-  for env_dir in "${SERVICE_DIR}/env" "$ENV_DIR"; do
-    test -d "$env_dir" -a -r "$env_dir" || {
-      msg_warn "Environment variables directory '$env_dir' is not a readable directory."
-      continue
-    }
-
-    # search for files
-    local file=""
-    for file in $(find "${env_dir}" -type f | sort -u); do
-      load_env_file "$file"
-    done
-  done
-
-  # export all env vars
-  export_all_env_vars
-}
-
 env_debug() {
   test "$ENV_DEBUG" = "1" || return 0
 
@@ -120,7 +66,7 @@ env_debug() {
 }
 
 setup_env() {
-  load_env_files
+  true
 }
 
 check_libdir() {
@@ -133,7 +79,7 @@ find_executable_jar() {
 
   local file=""
   local jar_file=""
-  for file in "${SERVICE_DIR}"/*.jar; do
+  for file in "${APP_DIR}"/*.jar; do
     test -f "$file" -a -r "$file" || continue
     echo "$file"
     return 0
@@ -264,14 +210,14 @@ append_java_tool_options() {
 }
 
 run_java_service() {
-  check_libdir "$SERVICE_DIR"
+  check_libdir "$APP_DIR"
 
   # get java version
   local java_version=$(java_version)
 
   # if we're running on java9+, we need to add some flags in order to be able
   # to start our services
-  if [ ${java_version} -ge 9 ]; then
+  if [ ${java_version} -ge 9 ] && [ ${java_version} -lt 17 ]; then
     append_java_tool_options "--illegal-access=warn"
   fi
 
@@ -280,9 +226,6 @@ run_java_service() {
 
   # java 11 goodies
   if [ ${java_version} -ge 11 ]; then
-    # use Graal JIT compiler
-    append_java_tool_options "-XX:+UseJVMCICompiler"
-
     if running_as_docker; then
       append_java_tool_options "-XX:+UseContainerSupport"
     fi
@@ -296,8 +239,8 @@ run_java_service() {
   # disable inifinite DNS caching
   append_java_tool_options "-Dnetworkaddress.cache.ttl=5 -Dnetworkaddress.cache.negative.ttl=5"
 
-  echo "ulimit limits:"
-  ulimit -a
+  #echo "ulimit limits:"
+  #ulimit -a
 
   # print env vars
   env_debug
@@ -318,9 +261,9 @@ run_java_service() {
 }
 
 run_java_class() {
-  CLASSPATH=$(classpath_get "$SERVICE_DIR")
+  CLASSPATH=$(classpath_get "$APP_DIR")
   export CLASSPATH
-  test "$CLASSPATH" = "$SERVICE_DIR" && die "No JAR files were discovered in directory: '${SERVICE_DIR}'"
+  test "$CLASSPATH" = "$APP_DIR" && die "No JAR files were discovered in directory: '${APP_DIR}'"
 
   msg_info "Starting java service CLASS: java ${JAVA_OPTS} ${JAVA_CLASS} $@"
   exec java ${JAVA_OPTS} "${JAVA_CLASS}" "$@"
@@ -328,8 +271,8 @@ run_java_class() {
 
 run_executable_jar() {
   # find a jar
-  local jar_file=$(find_executable_jar "$SERVICE_DIR")
-  test ! -f "$jar_file" && die "No JAR files were discovered in directory: '${SERVICE_DIR}'"
+  local jar_file=$(find_executable_jar "$APP_DIR")
+  test ! -f "$jar_file" && die "No JAR files were discovered in directory: '${APP_DIR}'"
 
   msg_info "Starting java service JAR: java ${JAVA_OPTS} -jar ${jar_file} $@"
   exec java ${JAVA_OPTS} -jar "${jar_file}" "$@"
@@ -340,21 +283,14 @@ printhelp() {
 Usage: $0 [JAVA_SERVICE_OPTIONS]
 
 This script tries to start java service. It looks for executable JAR
-file in directory identified by "SERVICE_DIR" directory.
+file in directory identified by "APP_DIR" directory.
 
 Supported environment variables:
-
-  * ENV_DIR       [default: "$ENV_DIR"]
-                  Directory to look for files that are sourced before
-                  service startup
 
   * ENV_DEBUG     [default: "$ENV_DEBUG"]
                   Print environment variables before starting service
 
-  * ENV_REMOVE    [default: "$ENV_REMOVE"]
-                  Remove env file immediately after sourcing them
-
-  * SERVICE_DIR   [default: "$SERVICE_DIR"]
+  * APP_DIR       [default: "$APP_DIR"]
                   Directory where to look for JAR files
 
   * JAVA_CLASS    [default: "$JAVA_CLASS"]
